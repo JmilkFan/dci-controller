@@ -5,7 +5,7 @@ from dci.common.i18n import _
 
 opts = [
     cfg.HostAddressOpt('host_ip',
-                       default='127.0.0.1',
+                       default='0.0.0.0',
                        help=_('The IP address on which dci-controller-api '
                               'listens.')),
     cfg.PortOpt('port',

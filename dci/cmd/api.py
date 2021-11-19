@@ -16,7 +16,7 @@ def main():
 
     # Build and start the WSGI app
     launcher = dci_service.process_launcher()
-    server = dci_service.WSGIService('dci_controller_api',
+    server = dci_service.WSGIService('dci-controller-api',
                                      CONF.api.enable_ssl_api)
     launcher.launch_service(server, workers=server.workers)
     launcher.wait()

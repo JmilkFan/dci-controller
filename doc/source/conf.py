@@ -45,7 +45,7 @@ autodoc_mock_imports = []
 # openstackdocstheme options
 repository_name = 'dci-controller'
 
-config_generator_config_file = '../../tools/config/dci_controller-config-generator.conf'
+config_generator_config_file = '../../tools/config/dci-controller-config-generator.conf'
 sample_config_basename = '_static/dci_controller'
 
 # The suffix of source filenames.
