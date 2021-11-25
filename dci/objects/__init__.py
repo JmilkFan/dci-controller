@@ -1,2 +1,2 @@
 def register_all():
-    pass
+    __import__('dci.objects.site')

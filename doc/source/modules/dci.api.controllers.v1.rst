@@ -12,6 +12,14 @@ dci.api.controllers.v1.l3\_vpns module
    :undoc-members:
    :show-inheritance:
 
+dci.api.controllers.v1.sites module
+-----------------------------------
+
+.. automodule:: dci.api.controllers.v1.sites
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

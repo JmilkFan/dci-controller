@@ -1,7 +1,7 @@
 import oslo_i18n as i18n
 
 
-DOMAIN = 'dci_controller'
+DOMAIN = 'dci-controller'
 _translators = i18n.TranslatorFactory(domain=DOMAIN)
 
 # The primary translation function using the well-known name "_"

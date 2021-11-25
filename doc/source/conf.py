@@ -46,7 +46,7 @@ autodoc_mock_imports = []
 repository_name = 'dci-controller'
 
 config_generator_config_file = '../../tools/config/dci-controller-config-generator.conf'
-sample_config_basename = '_static/dci_controller'
+sample_config_basename = '_static/dci-controller'
 
 # The suffix of source filenames.
 source_suffix = '.rst'

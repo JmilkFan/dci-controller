@@ -14,9 +14,9 @@
 # under the License.
 #
 
-"""WSGI script for cyborg-api.
+"""WSGI script for dci-controller-api.
 
-Script for running cyborg-api under Apache2.
+Script for running dci-controller-api under Apache2.
 """
 
 import sys
@@ -32,7 +32,7 @@ from dci.common import service
 def init_application():
     CONF = cfg.CONF
 
-    i18n.install('dci_controller')
+    i18n.install('dci-controller')
 
     service.prepare_service(sys.argv)
 

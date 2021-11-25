@@ -205,14 +205,14 @@
 
 # The back end to use for the database. (string value)
 # Deprecated group/name - [DEFAULT]/db_backend
-backend = sqlalchemy
+#backend = sqlalchemy
 
 # The SQLAlchemy connection string to use to connect to the
 # database. (string value)
 # Deprecated group/name - [DEFAULT]/sql_connection
 # Deprecated group/name - [DATABASE]/sql_connection
 # Deprecated group/name - [sql]/connection
-connection = sqlite:///dci-controller.sqlite
+#connection = <None>
 
 # The SQLAlchemy connection string to use to connect to the
 # slave database. (string value)

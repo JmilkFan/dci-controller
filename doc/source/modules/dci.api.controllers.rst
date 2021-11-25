@@ -20,6 +20,14 @@ dci.api.controllers.base module
    :undoc-members:
    :show-inheritance:
 
+dci.api.controllers.link module
+-------------------------------
+
+.. automodule:: dci.api.controllers.link
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 dci.api.controllers.root module
 -------------------------------
 

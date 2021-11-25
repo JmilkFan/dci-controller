@@ -1,4 +1,4 @@
 import pbr.version
 
 
-__version__ = pbr.version.VersionInfo('dci_controller').version_string()
+__version__ = pbr.version.VersionInfo('dci-controller').version_string()

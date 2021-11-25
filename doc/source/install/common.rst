@@ -11,6 +11,38 @@ Configure DCI Controller
         api_workers=1
         api_paste_config=/etc/dci-controller/api-paste.ini
         ...
+
+        [database]
+        backend = sqlalchemy
+        connection = sqlite:///dci-controller.sqlite
+    ..
+
+
+#.  To create alembic migrations use:
+
+    .. code-block:: ini
+
+        dci-controller-dbsync revision --message <message_info> --autogenerate
+
+    ..
+
+
+#.  Upgrade can be performed by:
+
+    .. code-block:: ini
+
+        dci-controller-dbsync - for backward compatibility
+        dci-controller-dbsync upgrade
+        dci-controller-dbsync upgrade --revision head
+
+    ..
+
+#.  Stamp db with most recent migration version, without actually running migrations:
+
+    .. code-block:: ini
+
+        dci-controller-dbsync stamp --revision head
+
     ..
 
 

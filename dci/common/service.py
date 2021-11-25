@@ -25,7 +25,7 @@ def prepare_service(argv=None):
     argv = argv or []
     config.parse_args(argv)
 
-    log.setup(CONF, 'dci_controller')
+    log.setup(CONF, 'dci-controller')
     objects.register_all()
 
 

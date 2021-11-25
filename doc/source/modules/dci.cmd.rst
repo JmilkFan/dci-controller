@@ -12,6 +12,14 @@ dci.cmd.api module
    :undoc-members:
    :show-inheritance:
 
+dci.cmd.dbsync module
+---------------------
+
+.. automodule:: dci.cmd.dbsync
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

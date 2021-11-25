@@ -28,6 +28,14 @@ dci.common.i18n module
    :undoc-members:
    :show-inheritance:
 
+dci.common.paths module
+-----------------------
+
+.. automodule:: dci.common.paths
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 dci.common.service module
 -------------------------
 

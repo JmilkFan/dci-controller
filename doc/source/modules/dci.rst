@@ -11,6 +11,7 @@ Subpackages
    dci.cmd
    dci.common
    dci.conf
+   dci.db
    dci.objects
 
 Submodules
