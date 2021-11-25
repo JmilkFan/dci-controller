@@ -1,19 +1,15 @@
-import pecan
-import json
 from http import HTTPStatus
-from webob import exc
+import pecan
+import wsme
 from wsme import types as wtypes
 
 from oslo_log import log
 
 from dci.api.controllers import base
+from dci.api.controllers import link
 from dci.api.controllers import types
 from dci.api import expose
-from dci.common import exception
-from dci.common.i18n import _LE
-from dci.common.i18n import _LI
 from dci import objects
-from dci.api.controllers import link
 
 
 LOG = log.getLogger(__name__)
@@ -40,6 +36,9 @@ class Site(base.APIBase):
 
     netconf_password = wtypes.text
     """The NETCONF password."""
+
+    links = wsme.wsattr([link.Link], readonly=True)
+    """A list containing a self link"""
 
     def __init__(self, **kwargs):
         super(Site, self).__init__(**kwargs)
@@ -88,7 +87,7 @@ class SiteController(base.DCIController):
         return Site.convert_with_links(obj_site)
 
     @expose.expose(SiteCollection, wtypes.text)
-    def get_all(self, state):
+    def get_all(self, state=None):
         """Retrieve a list of Site.
         """
         filters_dict = {}
@@ -105,7 +104,12 @@ class SiteController(base.DCIController):
         """
         LOG.info("[sites:port] Req = (%s)", req_body)
         context = pecan.request.context
-        obj_site = objects.Site.create(context, req_body)
+
+        # TODO(fanguiju): Get DCI site state through health check mechanism,
+        #                 default state is `active`.
+        req_body['state'] = 'active'
+        obj_site = objects.Site(context, **req_body)
+        obj_site.create(context)
         return Site.convert_with_links(obj_site)
 
     @expose.expose(Site, wtypes.text, body=types.jsontype,
@@ -115,7 +119,12 @@ class SiteController(base.DCIController):
         """
         LOG.info("[sites:put] Req = (%s)", req_body)
         context = pecan.request.context
-        obj_site = objects.Site.save(context, uuid, req_body)
+
+        obj_site = objects.Site.get(context, uuid)
+        for k, v in req_body.items():
+            if getattr(obj_site, k) != v:
+                setattr(obj_site, k, v)
+        obj_site.save(context)
         return Site.convert_with_links(obj_site)
 
     @expose.expose(None, wtypes.text, status_code=HTTPStatus.NO_CONTENT)
@@ -126,4 +135,5 @@ class SiteController(base.DCIController):
         """
         context = pecan.request.context
         LOG.info('[site:delete] UUID = (%s)', uuid)
-        objects.Site.destory(context, uuid)
+        obj_site = objects.Site.get(context, uuid)
+        obj_site.destroy(context)

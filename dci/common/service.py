@@ -1,5 +1,3 @@
-import os
-
 from oslo_concurrency import processutils
 from oslo_log import log
 from oslo_service import service
@@ -8,7 +6,6 @@ from oslo_service import wsgi
 from dci.api import app
 from dci.common import config
 from dci.common import exception
-from dci.common.i18n import _LE
 from dci.conf import CONF
 from dci import objects
 

@@ -39,8 +39,8 @@ class RootController(rest.RestController):
     def _route(self, args, request=None):
         """Overrides the default routing behavior.
 
-        It redirects the request to the default version of the dci-controller API
-        if the version number is not specified in the url.
+        It redirects the request to the default version of the dci-controller
+        API, if the version number is not specified in the url.
         """
 
         if args[0] and args[0] not in self._versions:

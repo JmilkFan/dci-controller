@@ -1,7 +1,7 @@
 """SQLAlchemy storage backend."""
 
-import threading
 import copy
+import threading
 
 from oslo_db import api as oslo_db_api
 from oslo_db import exception as db_exc
@@ -9,10 +9,8 @@ from oslo_db.sqlalchemy import enginefacade
 from oslo_db.sqlalchemy import utils as sqlalchemyutils
 from oslo_log import log
 from oslo_utils import strutils
-from oslo_utils import timeutils
 from oslo_utils import uuidutils
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import load_only
 
 from dci.common import exception
 from dci.common.i18n import _
@@ -89,7 +87,7 @@ def add_identity_filter(query, value):
 
 def _paginate_query(context, model, query, limit=None, marker=None,
                     sort_key=None, sort_dir=None):
-    sort_keys = ['id']
+    sort_keys = ['uuid']
     if sort_key and sort_key not in sort_keys:
         sort_keys.insert(0, sort_key)
     try:
@@ -143,8 +141,8 @@ class Connection(api.Connection):
         return _paginate_query(context, models.Site, query_prefix,
                                limit, marker, sort_key, sort_dir)
 
-    def device_list(self, context, limit=None, marker=None, sort_key=None,
-                    sort_dir=None):
+    def site_list(self, context, limit=None, marker=None, sort_key=None,
+                  sort_dir=None):
         query = model_query(context, models.Site)
         return _paginate_query(context, models.Site, query,
                                limit, marker, sort_key, sort_dir)
@@ -159,6 +157,21 @@ class Connection(api.Connection):
         except db_exc.DBDuplicateEntry as e:
             if 'name' in e.columns:
                 raise exception.DuplicateDeviceName(name=values['name'])
+
+    def site_create(self, context, values):
+        if not values.get('uuid'):
+            values['uuid'] = uuidutils.generate_uuid()
+
+        site = models.Site()
+        site.update(values)
+
+        with _session_for_write() as session:
+            try:
+                session.add(site)
+                session.flush()
+            except db_exc.DBDuplicateEntry:
+                raise exception.RecordAlreadyExists(uuid=values['uuid'])
+            return site
 
     @oslo_db_api.retry_on_deadlock
     def _do_update_site(self, context, uuid, values):

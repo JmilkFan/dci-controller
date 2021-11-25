@@ -1,3 +1,4 @@
+
 """SQLAlchemy models for accelerator service."""
 
 from oslo_db import options as db_options

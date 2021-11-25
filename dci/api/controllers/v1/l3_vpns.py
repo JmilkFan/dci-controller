@@ -1,6 +1,4 @@
-import json
 from http import HTTPStatus
-from webob import exc
 
 from oslo_log import log
 from wsme import types as wtypes
@@ -8,9 +6,6 @@ from wsme import types as wtypes
 from dci.api.controllers import base
 from dci.api.controllers import types
 from dci.api import expose
-from dci.common import exception
-from dci.common.i18n import _LE
-from dci.common.i18n import _LI
 
 
 LOG = log.getLogger(__name__)

@@ -1,6 +1,8 @@
-from oslo_log import log
+from http import HTTPStatus
 import six
 from six.moves import http_client
+
+from oslo_log import log
 
 from dci.common.i18n import _
 from dci.conf import CONF
@@ -9,7 +11,7 @@ from dci.conf import CONF
 LOG = log.getLogger(__name__)
 
 
-class dcioreProviderException(Exception):
+class DCIException(Exception):
     """Base DCI Controller Exception
 
     To correctly use this class, inherit from it and define
@@ -52,7 +54,7 @@ class dcioreProviderException(Exception):
                     # happened
                     message = self._msg_fmt
 
-        super(dcioreProviderException, self).__init__(message)
+        super(DCIException, self).__init__(message)
 
     @property
     def message(self):
@@ -70,22 +72,22 @@ class dcioreProviderException(Exception):
         return six.text_type(self.args[0])
 
 
-class Forbidden(dcioreProviderException):
+class Forbidden(DCIException):
     _msg_fmt = _("Forbidden")
     code = http_client.FORBIDDEN
 
 
-class Conflict(dcioreProviderException):
+class Conflict(DCIException):
     _msg_fmt = _('Conflict.')
     code = http_client.CONFLICT
 
 
-class Invalid(dcioreProviderException):
+class Invalid(DCIException):
     _msg_fmt = _("Invalid parameters.")
     code = http_client.BAD_REQUEST
 
 
-class ConfigInvalid(dcioreProviderException):
+class ConfigInvalid(DCIException):
     _msg_fmt = _("Invalid configuration. %(msg)s")
 
 
@@ -94,7 +96,7 @@ class InvalidAPIResponse(Invalid):
                  'Details: %(msg)s')
 
 
-class ExecutorCapabilityNotSupported(dcioreProviderException):
+class ExecutorCapabilityNotSupported(DCIException):
     _msg_fmt = _("%(msg)s")
 
 
@@ -110,9 +112,28 @@ class ConnectionRefused(Exception):
     pass
 
 
-class HTTPBadRequest(dcioreProviderException):
+class HTTPBadRequest(DCIException):
     _msg_fmt = _("%(explanation)s")
 
 
-class DBOperationException(dcioreProviderException):
+class DBOperationException(DCIException):
     _msg_fmt = _("%(msg)s")
+
+
+# Cannot be templated as the error syntax varies.
+# msg needs to be constructed when raised.
+class InvalidParameterValue(Invalid):
+    _msg_fmt = _("%(err)s")
+
+
+class NotFound(DCIException):
+    _msg_fmt = _("Resource could not be found.")
+    code = HTTPStatus.NOT_FOUND
+
+
+class ResourceNotFound(NotFound):
+    _msg_fmt = _("%(resource)s not found %(msg)s")
+
+
+class RecordAlreadyExists(DCIException):
+    _msg_fmt = _("Database record with uuid %(uuid)s already exists.")

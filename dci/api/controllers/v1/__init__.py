@@ -4,8 +4,8 @@ from pecan import rest
 from wsme import types as wtypes
 
 from dci.api.controllers import base
-from dci.api.controllers.v1 import sites
 from dci.api.controllers.v1 import l3_vpns
+from dci.api.controllers.v1 import sites
 from dci.api import expose
 
 
