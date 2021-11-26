@@ -13,9 +13,9 @@ LOG = log.getLogger(__name__)
 
 
 TF_DEFAULT_DOMAIN = 'default-domain'
-TF_DEFAULT_PROJECT = 'admin'
+TF_DEFAULT_PROJECT = 'project01'
 TF_DEFAULT_IPAM = 'dci-controller-default-ipam'
-TF_DEFAULT_ROUTR_TARGET = '100:100'
+TF_DEFAULT_ROUTR_TARGET = 'target:100:100'
 
 
 class Client(object):
@@ -46,6 +46,7 @@ class Client(object):
         obj_site = objects.Site.get(context, self.site_uuid)
         self.client = vnc_api.VncApi(
             api_server_host=obj_site.tf_api_server_host,
+            api_server_port=obj_site.tf_api_server_port,
             tenant_name=TF_DEFAULT_PROJECT,
             username=obj_site.tf_username,
             password=obj_site.tf_password)
@@ -89,14 +90,19 @@ class Client(object):
         ipam_subnet_t = vnc_api.IpamSubnetType(subnet=subnet_t)
         vn_subnet_t = vnc_api.VnSubnetsType(ipam_subnets=[ipam_subnet_t])
 
-        # Virtual Network Type, Setup forwarding mode L2 Only.
-        vn_t = vnc_api.VirtualNetworkType(forwarding_mode='l2')
+        # Virtual Network Type, Setup forwarding mode L2 and L3.
+        vn_t = vnc_api.VirtualNetworkType(forwarding_mode='l2_l3')
+
+        # use default route target
+        route_target_list_t = vnc_api.RouteTargetList(
+            route_target=[TF_DEFAULT_ROUTR_TARGET])
 
         # Create Virtual Network Object
         LOG.info(_LI("create virtual network [%s]"), vn_name)
         vn_o = vnc_api.VirtualNetwork(name=vn_name,
                                       parent_obj=project_o,
-                                      virtual_network_properties=vn_t)
+                                      virtual_network_properties=vn_t,
+                                      route_target_list=route_target_list_t)
         vn_o.set_network_ipam(ref_obj=self.ipam_o, ref_data=vn_subnet_t)
         self.client.virtual_network_create(vn_o)
 

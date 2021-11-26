@@ -5,6 +5,7 @@ from oslo_db.sqlalchemy import models
 from oslo_utils import timeutils
 from sqlalchemy import Column
 from sqlalchemy import Enum
+from sqlalchemy import Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import String
 import urllib.parse as urlparse
@@ -58,11 +59,14 @@ class Site(Base):
     uuid = Column(String(36), primary_key=True)
     name = Column(String(36), nullable=True)
     netconf_host = Column(String(36), nullable=False)
+    netconf_port = Column(Integer, nullable=True)
     netconf_username = Column(String(36), nullable=False)
     netconf_password = Column(String(36), nullable=False)
     tf_api_server_host = Column(String(36), nullable=False)
+    tf_api_server_port = Column(Integer, nullable=True)
     tf_username = Column(String(36), nullable=False)
     tf_password = Column(String(36), nullable=False)
+    tf_project_uuid = Column(String(36), nullable=True)
     state = Column(Enum('active', 'inactive'), nullable=False)
 
 

@@ -151,13 +151,13 @@ class L3EVPNDCIController(base.DCIController):
             self._create_l3evpn_dci_in_site(name,
                                             east_site_uuid,
                                             east_site_subnet_cidr)
-            # self._create_l3evpn_dci_in_site(name,
-            #                                 west_site_uuid,
-            #                                 west_site_subnet_cidr)
+            self._create_l3evpn_dci_in_site(name,
+                                            west_site_uuid,
+                                            west_site_subnet_cidr)
         except Exception as err:
             # TODO(fanguiju): Rollback
             LOG.error(_LE("Failed create L3 EVPN DCI[%(name)s], "
-                          "details %(err)s"), {'name': name, 'err': exc.err})
+                          "details %(err)s"), {'name': name, 'err': err})
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
         # Step4. Update the L3 EVPN DCI state.
@@ -197,13 +197,13 @@ class L3EVPNDCIController(base.DCIController):
             self._clean_l3evpn_dci_in_site(name,
                                            east_site_uuid,
                                            east_site_subnet_cidr)
-            # self._clean_l3evpn_dci_in_site(name,
-            #                                west_site_uuid,
-            #                                west_site_subnet_cidr)
+            self._clean_l3evpn_dci_in_site(name,
+                                           west_site_uuid,
+                                           west_site_subnet_cidr)
         except Exception as err:
             # TODO(fanguiju): Rollback
             LOG.error(_LE("Failed delete L3 EVPN DCI[%(name)s], "
-                          "details %(err)s"), {'name': name, 'err': exc.err})
+                          "details %(err)s"), {'name': name, 'err': err})
             import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
         # Step4. Delete the L3 EVPN DCI record.

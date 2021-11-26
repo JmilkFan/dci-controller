@@ -21,11 +21,14 @@ class Site(base.DCIObject, object_base.VersionedObjectDictCompat):
         'uuid': object_fields.UUIDField(nullable=False),
         'name': object_fields.StringField(nullable=True),
         'netconf_host': object_fields.StringField(nullable=False),
+        'netconf_port': object_fields.IntegerField(nullable=True),
         'netconf_username': object_fields.StringField(nullable=False),
         'netconf_password': object_fields.StringField(nullable=False),
         'tf_api_server_host': object_fields.StringField(nullable=False),
+        'tf_api_server_port': object_fields.IntegerField(nullable=True),
         'tf_username': object_fields.StringField(nullable=False),
         'tf_password': object_fields.StringField(nullable=False),
+        'tf_project_uuid': object_fields.UUIDField(nullable=True),
         'state': object_fields.EnumField(valid_values=['active', 'inactive'],
                                          nullable=False)
     }

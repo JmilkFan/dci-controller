@@ -28,8 +28,11 @@ class Site(base.APIBase):
     name = wtypes.text
     """The name of DCI site."""
 
-    netconf_host = wtypes.text
+    netconf_host = wtypes.IPv4AddressType()
     """The NETCONF host IP address."""
+
+    netconf_port = wtypes.IntegerType()
+    """The NETCONF host Port."""
 
     netconf_username = wtypes.text
     """The NETCONF user."""
@@ -37,14 +40,20 @@ class Site(base.APIBase):
     netconf_password = wtypes.text
     """The NETCONF password."""
 
-    tf_api_server_host = wtypes.text
+    tf_api_server_host = wtypes.IPv4AddressType()
     """The Tungsten Fabric API Server IP address."""
+
+    tf_api_server_port = wtypes.IntegerType()
+    """The Tungsten Fabric API Server Port."""
 
     tf_username = wtypes.text
     """The Tungsten Fabric user."""
 
     tf_password = wtypes.text
     """The Tungsten Fabric password."""
+
+    tf_project_uuid = types.uuid
+    """The UUID of the Tungsten Fabric Project."""
 
     state = wtypes.text
     """State of DCI Site."""
