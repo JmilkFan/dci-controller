@@ -37,6 +37,18 @@ class Site(base.APIBase):
     netconf_password = wtypes.text
     """The NETCONF password."""
 
+    tf_api_server_host = wtypes.text
+    """The Tungsten Fabric API Server IP address."""
+
+    tf_username = wtypes.text
+    """The Tungsten Fabric user."""
+
+    tf_password = wtypes.text
+    """The Tungsten Fabric password."""
+
+    state = wtypes.text
+    """State of DCI Site."""
+
     links = wsme.wsattr([link.Link], readonly=True)
     """A list containing a self link"""
 

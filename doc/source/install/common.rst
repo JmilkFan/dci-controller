@@ -22,7 +22,7 @@ Configure DCI Controller
 
     .. code-block:: ini
 
-        dci-controller-dbsync revision --message <message_info> --autogenerate
+        dci-controller-dbsync --config-file etc/dci-controller/dci-controller.conf revision --message "initdb" --autogenerate
 
     ..
 
@@ -32,12 +32,13 @@ Configure DCI Controller
     .. code-block:: ini
 
         dci-controller-dbsync - for backward compatibility
-        dci-controller-dbsync upgrade
+        dci-controller-dbsync --config-file etc/dci-controller/dci-controller.conf upgrade
         dci-controller-dbsync upgrade --revision head
 
     ..
 
-#.  Stamp db with most recent migration version, without actually running migrations:
+#.  Stamp db with most recent migration version, without actually running
+    migrations:
 
     .. code-block:: ini
 

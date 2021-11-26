@@ -1,21 +1,12 @@
-
 """SQLAlchemy models for accelerator service."""
 
 from oslo_db import options as db_options
 from oslo_db.sqlalchemy import models
 from oslo_utils import timeutils
-from sqlalchemy import Boolean
 from sqlalchemy import Column
-from sqlalchemy import DateTime
 from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import ForeignKey
-from sqlalchemy import Index
-from sqlalchemy import Integer
-from sqlalchemy import orm
-from sqlalchemy import schema
 from sqlalchemy import String
-from sqlalchemy import Text
 import urllib.parse as urlparse
 
 from dci.common import paths
@@ -69,4 +60,22 @@ class Site(Base):
     netconf_host = Column(String(36), nullable=False)
     netconf_username = Column(String(36), nullable=False)
     netconf_password = Column(String(36), nullable=False)
+    tf_api_server_host = Column(String(36), nullable=False)
+    tf_username = Column(String(36), nullable=False)
+    tf_password = Column(String(36), nullable=False)
+    state = Column(Enum('active', 'inactive'), nullable=False)
+
+
+class L3EVPNDCI(Base):
+    """Represents the L3 EVPN DCI."""
+
+    __tablename__ = 'l3_evpn_dcis'
+
+    uuid = Column(String(36), primary_key=True)
+    name = Column(String(36), nullable=True)
+    # TODO(fanguiju): Associate to sites table, and use SQL Association query.
+    east_site_uuid = Column(String(36), nullable=True)
+    east_site_subnet_cidr = Column(String(36), nullable=True)
+    west_site_uuid = Column(String(36), nullable=True)
+    west_site_subnet_cidr = Column(String(36), nullable=True)
     state = Column(Enum('active', 'inactive'), nullable=False)

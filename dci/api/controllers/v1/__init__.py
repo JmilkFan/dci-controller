@@ -4,7 +4,7 @@ from pecan import rest
 from wsme import types as wtypes
 
 from dci.api.controllers import base
-from dci.api.controllers.v1 import l3_vpns
+from dci.api.controllers.v1 import l3evpn_dcis
 from dci.api.controllers.v1 import sites
 from dci.api import expose
 
@@ -26,7 +26,7 @@ class Controller(rest.RestController):
     """Version 1 API controller root"""
 
     sites = sites.SiteController()
-    l3_vpns = l3_vpns.L3VPNController()
+    l3evpn_dcis = l3evpn_dcis.L3EVPNDCIController()
 
     @expose.expose(V1)
     def get(self):

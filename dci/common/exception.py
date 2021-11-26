@@ -96,7 +96,7 @@ class InvalidAPIResponse(Invalid):
                  'Details: %(msg)s')
 
 
-class ExecutorCapabilityNotSupported(DCIException):
+class CapabilityNotSupported(DCIException):
     _msg_fmt = _("%(msg)s")
 
 

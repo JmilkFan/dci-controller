@@ -2,9 +2,9 @@
 Installing DCI Controller API via WSGI
 ======================================
 
-dci-controller-api service can be run either as a Python command that runs a web
-serve or As a WSGI application hosted by uwsgi. This document is a guide to
-deploy dci-controller-api using uwsgi.
+dci-controller-api service can be run either as a Python command that runs
+a web serve or As a WSGI application hosted by uwsgi. This document is a
+guide to deploy dci-controller-api using uwsgi.
 
 WSGI Application
 ----------------

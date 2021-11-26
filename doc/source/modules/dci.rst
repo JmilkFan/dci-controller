@@ -12,6 +12,7 @@ Subpackages
    dci.common
    dci.conf
    dci.db
+   dci.juniper
    dci.objects
 
 Submodules
