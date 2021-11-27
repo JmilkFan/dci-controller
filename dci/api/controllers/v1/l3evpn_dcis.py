@@ -9,11 +9,11 @@ from dci.api.controllers import base
 from dci.api.controllers import link
 from dci.api.controllers import types
 from dci.api import expose
-from dci import objects
 from dci.common import exception
 from dci.common.i18n import _LE
 from dci.juniper import mx_api
 from dci.juniper import tf_vnc_api
+from dci import objects
 
 
 LOG = log.getLogger(__name__)
@@ -121,7 +121,7 @@ class L3EVPNDCIController(base.DCIController):
             action='set', site_uuid=site_uuid, subnet_cidr=subnet_cidr)
 
     def _clean_l3evpn_dci_in_site(self, name, site_uuid, subnet_cidr):
-         # Step2. Delete a Virtual Network
+        # Step2. Delete a Virtual Network
         vn_name = 'dci-controller-setup-' + name
         tf_client = tf_vnc_api.Client(site_uuid)
         tf_client.delete_virtual_network(vn_name)
@@ -158,7 +158,7 @@ class L3EVPNDCIController(base.DCIController):
             # TODO(fanguiju): Rollback
             LOG.error(_LE("Failed create L3 EVPN DCI[%(name)s], "
                           "details %(err)s"), {'name': name, 'err': err})
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            raise err
 
         # Step4. Update the L3 EVPN DCI state.
         req_body['state'] = 'active'
@@ -204,7 +204,7 @@ class L3EVPNDCIController(base.DCIController):
             # TODO(fanguiju): Rollback
             LOG.error(_LE("Failed delete L3 EVPN DCI[%(name)s], "
                           "details %(err)s"), {'name': name, 'err': err})
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
+            raise err
 
         # Step4. Delete the L3 EVPN DCI record.
         obj_l3evpn_dci.destroy(context)

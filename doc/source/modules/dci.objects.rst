@@ -20,6 +20,14 @@ dci.objects.fields module
    :undoc-members:
    :show-inheritance:
 
+dci.objects.l2evpn\_dci module
+------------------------------
+
+.. automodule:: dci.objects.l2evpn_dci
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 dci.objects.l3evpn\_dci module
 ------------------------------
 

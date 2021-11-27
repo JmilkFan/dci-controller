@@ -227,7 +227,9 @@ class Connection(api.Connection):
         query_prefix = model_query(context, models.L3EVPNDCI)
         filters = copy.deepcopy(filters)
 
-        exact_match_filter_names = ['state']
+        exact_match_filter_names = ['state',
+                                    'east_site_uuid',
+                                    'west_site_uuid']
 
         # Filter the query
         query_prefix = self._exact_filter(models.L3EVPNDCI, query_prefix,
@@ -293,4 +295,99 @@ class Connection(api.Connection):
             if count != 1:
                 raise exception.ResourceNotFound(
                     resource='L3EVPNDCI',
+                    msg='with uuid=%s' % uuid)
+
+    # l2evpn_dci
+    def l2evpn_dci_get(self, context, uuid):
+        query = model_query(
+            context,
+            models.L2EVPNDCI).filter_by(uuid=uuid)
+        try:
+            return query.one()
+        except NoResultFound:
+            raise exception.ResourceNotFound(
+                resource='L2EVPNDCI',
+                msg='with uuid=%s' % uuid)
+
+    def l2evpn_dci_list_by_filters(self, context, filters,
+                                   sort_key='created_at',
+                                   sort_dir='desc', limit=None,
+                                   marker=None, join_columns=None):
+        """Return L2 EVPN DCI that match all filters sorted by the given keys.
+        """
+
+        if limit == 0:
+            return []
+
+        query_prefix = model_query(context, models.L2EVPNDCI)
+        filters = copy.deepcopy(filters)
+
+        exact_match_filter_names = ['state',
+                                    'east_site_uuid',
+                                    'west_site_uuid']
+
+        # Filter the query
+        query_prefix = self._exact_filter(models.L2EVPNDCI, query_prefix,
+                                          filters, exact_match_filter_names)
+        if query_prefix is None:
+            return []
+        return _paginate_query(context, models.L2EVPNDCI, query_prefix,
+                               limit, marker, sort_key, sort_dir)
+
+    def l2evpn_dci_list(self, context, limit=None, marker=None, sort_key=None,
+                        sort_dir=None):
+        query = model_query(context, models.L2EVPNDCI)
+        return _paginate_query(context, models.L2EVPNDCI, query,
+                               limit, marker, sort_key, sort_dir)
+
+    def l2evpn_dci_update(self, context, uuid, values):
+        if 'uuid' in values:
+            msg = _("Cannot overwrite UUID for an existing L2 EVPN DCI.")
+            raise exception.InvalidParameterValue(err=msg)
+
+        try:
+            return self._do_update_l2evpn_dci(context, uuid, values)
+        except db_exc.DBDuplicateEntry as e:
+            if 'name' in e.columns:
+                raise exception.DuplicateDeviceName(name=values['name'])
+
+    def l2evpn_dci_create(self, context, values):
+        if not values.get('uuid'):
+            values['uuid'] = uuidutils.generate_uuid()
+
+        l2evpn_dci = models.L2EVPNDCI()
+        l2evpn_dci.update(values)
+
+        with _session_for_write() as session:
+            try:
+                session.add(l2evpn_dci)
+                session.flush()
+            except db_exc.DBDuplicateEntry:
+                raise exception.RecordAlreadyExists(uuid=values['uuid'])
+            return l2evpn_dci
+
+    @oslo_db_api.retry_on_deadlock
+    def _do_update_l2evpn_dci(self, context, uuid, values):
+        with _session_for_write():
+            query = model_query(context, models.L2EVPNDCI)
+            query = add_identity_filter(query, uuid)
+            try:
+                ref = query.with_for_update().one()
+            except NoResultFound:
+                raise exception.ResourceNotFound(
+                    resource='L2EVPNDCI',
+                    msg='with uuid=%s' % uuid)
+
+            ref.update(values)
+        return ref
+
+    @oslo_db_api.retry_on_deadlock
+    def l2evpn_dci_delete(self, context, uuid):
+        with _session_for_write():
+            query = model_query(context, models.L2EVPNDCI)
+            query = add_identity_filter(query, uuid)
+            count = query.delete()
+            if count != 1:
+                raise exception.ResourceNotFound(
+                    resource='L2EVPNDCI',
                     msg='with uuid=%s' % uuid)

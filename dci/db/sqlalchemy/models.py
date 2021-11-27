@@ -5,8 +5,8 @@ from oslo_db.sqlalchemy import models
 from oslo_utils import timeutils
 from sqlalchemy import Column
 from sqlalchemy import Enum
-from sqlalchemy import Integer
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Integer
 from sqlalchemy import String
 import urllib.parse as urlparse
 
@@ -78,8 +78,25 @@ class L3EVPNDCI(Base):
     uuid = Column(String(36), primary_key=True)
     name = Column(String(36), nullable=True)
     # TODO(fanguiju): Associate to sites table, and use SQL Association query.
-    east_site_uuid = Column(String(36), nullable=True)
-    east_site_subnet_cidr = Column(String(36), nullable=True)
-    west_site_uuid = Column(String(36), nullable=True)
-    west_site_subnet_cidr = Column(String(36), nullable=True)
+    east_site_uuid = Column(String(36), nullable=False)
+    west_site_uuid = Column(String(36), nullable=False)
+    east_site_subnet_cidr = Column(String(36), nullable=False)
+    west_site_subnet_cidr = Column(String(36), nullable=False)
+    state = Column(Enum('active', 'inactive'), nullable=False)
+
+
+class L2EVPNDCI(Base):
+    """Represents the L2 EVPN DCI."""
+
+    __tablename__ = 'l2_evpn_dcis'
+
+    uuid = Column(String(36), primary_key=True)
+    name = Column(String(36), nullable=True)
+    east_site_uuid = Column(String(36), nullable=False)
+    west_site_uuid = Column(String(36), nullable=False)
+    subnet_cidr = Column(String(36), nullable=False)
+    east_site_subnet_allocation_pool = Column(String(36), nullable=False)
+    west_site_subnet_allocation_pool = Column(String(36), nullable=False)
+    vlan_id = Column(Integer, nullable=False)
+    route_target = Column(String(36), nullable=False)
     state = Column(Enum('active', 'inactive'), nullable=False)

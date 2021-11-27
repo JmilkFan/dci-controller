@@ -1,11 +1,12 @@
 import pecan
-from vnc_api import vnc_api
 from vnc_api import exceptions as vnc_api_exceptions
+from vnc_api import vnc_api
 
 from oslo_log import log
 
-from dci.common.i18n import _LI
 from dci.common.i18n import _LE
+from dci.common.i18n import _LI
+from dci.common.i18n import _LW
 from dci import objects
 
 
@@ -36,10 +37,9 @@ class Client(object):
                 fq_name=[TF_DEFAULT_DOMAIN,
                          TF_DEFAULT_PROJECT,
                          TF_DEFAULT_IPAM])
-        except vnc_api_exceptions.NoIdError as err:
+        except vnc_api_exceptions.NoIdError:
             LOG.info(_LI("Init default IPAM [defailt-ipam]"))
-            ipam_uuid = self._create_default_ipam_with_user_defined_subnet()
-            self.ipam_o = self.client.network_ipam_read(id=ipam_uuid)
+            self._create_default_ipam_with_user_defined_subnet()
 
     def connect(self):
         context = pecan.request.context
@@ -51,12 +51,17 @@ class Client(object):
             username=obj_site.tf_username,
             password=obj_site.tf_password)
 
-    def _get_default_domain_obj(self):
-        return self.client.domain_read(fq_name=[TF_DEFAULT_DOMAIN])
-
     def _get_default_project_obj(self):
-        return self.client.project_read(fq_name=[TF_DEFAULT_DOMAIN,
-                                                 TF_DEFAULT_PROJECT])
+        try:
+            project_o = self.client.project_read(fq_name=[TF_DEFAULT_DOMAIN,
+                                                          TF_DEFAULT_PROJECT])
+        except vnc_api_exceptions.NoIdError as err:
+            LOG.error(_LE("Failedto get default project [%(project)s], "
+                          "details %(err)s"),
+                      {'project': TF_DEFAULT_DOMAIN + ':' + TF_DEFAULT_PROJECT,
+                       'err': err})
+            raise err
+        return project_o
 
     def _create_default_ipam_with_user_defined_subnet(self):
 
@@ -72,8 +77,8 @@ class Client(object):
                                      ipam_subnet_method='user-defined-subnet')
 
         LOG.info(_LI("create default IPAM [%s]"), TF_DEFAULT_IPAM)
-        ipam_o = self.client.network_ipam_create(ipam_o)
-        return ipam_o
+        ipam_uuid = self.client.network_ipam_create(ipam_o)
+        self.ipam_o = self.client.network_ipam_read(id=ipam_uuid)
 
     def _get_subnet_type(self, subnet_cidr):
         prefix, prefix_len = subnet_cidr.split('/')
@@ -81,31 +86,87 @@ class Client(object):
                                       ip_prefix_len=int(prefix_len))
         return subnet_t
 
-    def create_virtal_network_with_user_defined_subnet(self, vn_name,
-                                                       subnet_cidr):
+    def create_virtal_network_with_user_defined_subnet(
+            self, vn_name, subnet_cidr, subnet_allocation_pool=None,
+            route_target=None):
         project_o = self._get_default_project_obj()
 
-        # Create defined Subnet Type.
+        # Create user defined Subnet Type for Virtual Network.
         subnet_t = self._get_subnet_type(subnet_cidr)
-        ipam_subnet_t = vnc_api.IpamSubnetType(subnet=subnet_t)
+        if subnet_allocation_pool:
+            start_ip, end_ip = subnet_allocation_pool.split(',')
+            allocation_pools_t = vnc_api.AllocationPoolType(
+                start=start_ip,
+                end=end_ip,
+                vrouter_specific_pool=True)
+            ipam_subnet_t = vnc_api.IpamSubnetType(
+                subnet=subnet_t,
+                allocation_pools=[allocation_pools_t])
+        else:
+            ipam_subnet_t = vnc_api.IpamSubnetType(subnet=subnet_t)
         vn_subnet_t = vnc_api.VnSubnetsType(ipam_subnets=[ipam_subnet_t])
 
-        # Virtual Network Type, Setup forwarding mode L2 and L3.
+        # Creste Virtual Network Type
+        # NOTE(fanguiju): Alway use `automatic` vxlan_network_identifier_mode.
         vn_t = vnc_api.VirtualNetworkType(forwarding_mode='l2_l3')
 
-        # use default route target
-        route_target_list_t = vnc_api.RouteTargetList(
-            route_target=[TF_DEFAULT_ROUTR_TARGET])
+        # Create Route Target List Type, use default route target.
+        if route_target:
+            # TODO(fanguiju): String verify by re module.
+            route_target = 'target:' + route_target
+            route_target_list_t = vnc_api.RouteTargetList(
+                route_target=[route_target])
+        else:
+            # NOTE(fanguiju): L3 EVPN VLAN only use the default route target.
+            route_target_list_t = vnc_api.RouteTargetList(
+                route_target=[TF_DEFAULT_ROUTR_TARGET])
 
-        # Create Virtual Network Object
+        # Create Virtual Network
         LOG.info(_LI("create virtual network [%s]"), vn_name)
         vn_o = vnc_api.VirtualNetwork(name=vn_name,
                                       parent_obj=project_o,
                                       virtual_network_properties=vn_t,
+                                      address_allocation_mode='user-defined-subnet-only',  # noqa
                                       route_target_list=route_target_list_t)
         vn_o.set_network_ipam(ref_obj=self.ipam_o, ref_data=vn_subnet_t)
-        self.client.virtual_network_create(vn_o)
+        vn_uuid = self.client.virtual_network_create(vn_o)
+        return vn_uuid
+
+    def get_virtual_network_obj(self, vn_uuid):
+        try:
+            vn_o = self.client.virtual_network_read(id=vn_uuid)
+        except vnc_api_exceptions.NoIdError as err:
+            LOG.error(_LE("Failed to get virtual network [%(id)s], "
+                          "deails %(err)s"),
+                      {'id': vn_uuid, 'err': err})
+            raise err
+        return vn_o
+
+    def get_virtual_network_vni(self, vn_uuid):
+        vn_o = self.get_virtual_network_obj(vn_uuid)
+        vni = vn_o.virtual_network_network_id
+        return vni
+
+    def get_virtual_network_obj_by_name(self, vn_name):
+        try:
+            vn_o = self.client.virtual_network_read(
+                fq_name=[TF_DEFAULT_DOMAIN, TF_DEFAULT_PROJECT, vn_name])
+        except vnc_api_exceptions.NoIdError as err:
+            LOG.error(_LE("Failed to get virtual network [%(name)s], "
+                          "deails %(err)s"),
+                      {'name': vn_name, 'err': err})
+            raise err
+        return vn_o
 
     def delete_virtual_network(self, vn_name):
-        self.client.virtual_network_delete(
-            fq_name=[TF_DEFAULT_DOMAIN, TF_DEFAULT_PROJECT, vn_name])
+        try:
+            self.client.virtual_network_delete(
+                fq_name=[TF_DEFAULT_DOMAIN, TF_DEFAULT_PROJECT, vn_name])
+        except vnc_api_exceptions.NoIdError:
+            LOG.warning(_LW("Failed to delete virtual network [%s], "
+                            "not found."), vn_name)
+        except vnc_api_exceptions.RefsExistError as err:
+            LOG.error(_LE("Failed to delete virtual network [%(name)s], "
+                          "details %(err)s"),
+                      {'name': vn_name, 'err': err})
+            raise err

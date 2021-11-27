@@ -4,6 +4,14 @@ dci.api.controllers.v1 package
 Submodules
 ----------
 
+dci.api.controllers.v1.l2evpn\_dcis module
+------------------------------------------
+
+.. automodule:: dci.api.controllers.v1.l2evpn_dcis
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 dci.api.controllers.v1.l3evpn\_dcis module
 ------------------------------------------
 
