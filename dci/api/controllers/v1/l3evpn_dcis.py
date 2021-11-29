@@ -19,7 +19,7 @@ from dci import objects
 
 LOG = log.getLogger(__name__)
 
-VN_NAME_PREFIX = 'dci-controller-setup-'
+VN_NAME_PREFIX = 'dci-controller-L3EVPNDCI-'
 
 
 class L3EVPNDCI(base.APIBase):
@@ -140,42 +140,16 @@ class L3EVPNDCIController(base.DCIController):
                                       port=site.netconf_port,
                                       username=site.netconf_username,
                                       password=site.netconf_password)
-            mx_client.edit_l3evpn_dci_routing_instance_static_route(
-                action='set', subnet_cidr=subnet_cidr)
+            mx_client.create_static_route(subnet_cidr)
         except Exception as err:
             LOG.error(_LE("Failed to edit L3 EVPN DCI RI static route "
                           "[%(cidr)s], details %(err)s"),
                       {'cidr': subnet_cidr, 'err': err})
 
             LOG.info(_LE("Rollback virtual network [%s]..."), vn_name)
-            self._retry_to_delete_virtual_network(tf_client, vn_name)
+            tf_client.retry_to_delete_virtual_network(vn_name)
 
             raise err
-
-    def _retry_to_delete_virtual_network(self, tf_client, vn_name):
-        retry = 3
-        while retry:
-            try:
-                tf_client.delete_virtual_network(vn_name)
-                break
-            except Exception as err:
-                LOG.error(_LE("Failed to delete virtual network, "
-                              "retry count [-%(cnt)s], details %(err)s"),
-                          {'cnt': retry, 'err': err})
-                retry -= 1
-
-    def _retry_to_delete_static_route(self, mx_client, subnet_cidr):
-        retry = 3
-        while retry:
-            try:
-                mx_client.edit_l3evpn_dci_routing_instance_static_route(
-                    action='delete', subnet_cidr=subnet_cidr)
-                break
-            except Exception as err:
-                LOG.error(_LE("Failed to delete static route in MX, "
-                              "retry count [-%(cnt)s], details %(err)s"),
-                          {'cnt': retry, 'err': err})
-                retry -= 1
 
     def _soft_delete_l3evpn_dci_in_site(self, site, vn_name, subnet_cidr):
 
@@ -184,13 +158,13 @@ class L3EVPNDCIController(base.DCIController):
                                       username=site.tf_username,
                                       password=site.tf_password,
                                       project=site.tf_project)
-        self._retry_to_delete_virtual_network(tf_client, vn_name)
+        tf_client.retry_to_delete_virtual_network(vn_name)
 
         mx_client = mx_api.Client(host=site.netconf_host,
                                   port=site.netconf_port,
                                   username=site.netconf_username,
                                   password=site.netconf_password)
-        self._retry_to_delete_static_route(mx_client, subnet_cidr)
+        mx_client.retry_to_delete_static_route(subnet_cidr)
 
     @expose.expose(L3EVPNDCI, body=types.jsontype,
                    status_code=HTTPStatus.CREATED)
@@ -214,7 +188,6 @@ class L3EVPNDCIController(base.DCIController):
         east_site_subnet_cidr = req_body['east_site_subnet_cidr']
         west_site_subnet_cidr = req_body['west_site_subnet_cidr']
 
-        # TODO(fanguiju): Use two concurrent tasks.
         # East Site
         try:
             self._create_l3evpn_dci_in_site(east_site, vn_name,

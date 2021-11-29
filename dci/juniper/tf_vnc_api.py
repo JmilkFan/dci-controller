@@ -114,8 +114,6 @@ class Client(object):
 
         # Create Route Target List Type, use default route target.
         if route_target:
-            # TODO(fanguiju): String verify by re module.
-            route_target = 'target:' + route_target
             route_target_list_t = vnc_api.RouteTargetList(
                 route_target=[route_target])
         else:
@@ -172,3 +170,15 @@ class Client(object):
                           "details %(err)s"),
                       {'name': vn_name, 'err': err})
             raise err
+
+    def retry_to_delete_virtual_network(self, vn_name):
+        retry = 3
+        while retry:
+            try:
+                self.delete_virtual_network(vn_name)
+                break
+            except Exception as err:
+                LOG.error(_LE("Failed to delete virtual network, "
+                              "retry count [-%(cnt)s], details %(err)s"),
+                          {'cnt': retry, 'err': err})
+                retry -= 1

@@ -97,6 +97,7 @@ class L2EVPNDCI(Base):
     subnet_cidr = Column(String(36), nullable=False)
     east_site_subnet_allocation_pool = Column(String(36), nullable=False)
     west_site_subnet_allocation_pool = Column(String(36), nullable=False)
+    vn_route_target = Column(String(36), nullable=False)
     vlan_id = Column(Integer, nullable=False)
-    route_target = Column(String(36), nullable=False)
+    dci_vni = Column(Integer, nullable=False)
     state = Column(Enum('active', 'inactive'), nullable=False)

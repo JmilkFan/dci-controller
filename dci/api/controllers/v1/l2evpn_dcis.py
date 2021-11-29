@@ -12,12 +12,18 @@ from dci.api.controllers import types
 from dci.api import expose
 from dci.common import exception
 from dci.common.i18n import _LE
+from dci.common.i18n import _LI
 from dci.juniper import mx_api
 from dci.juniper import tf_vnc_api
 from dci import objects
 
 
 LOG = log.getLogger(__name__)
+
+VN_NAME_PREFIX = 'dci-controller-L2EVPNDCI-'
+VLAN_ID_RANGE = [1000, 2000]
+ROUTE_TARGET_RANGE = [1000, 2000]
+DCI_EVPN_TYPE2_VNI = [1000, 2000]
 
 
 class L2EVPNDCI(base.APIBase):
@@ -47,12 +53,6 @@ class L2EVPNDCI(base.APIBase):
 
     west_site_subnet_allocation_pool = wtypes.text
     """Subnet allocation IP address pool."""
-
-    vlan_id = wtypes.IntegerType()
-    """VLAN ID between fase-2-tf and fase-2-dci"""
-
-    route_target = wtypes.text
-    """Virtual Network Route Target."""
 
     state = wtypes.text
     """State of L2 EVPN DCI."""
@@ -101,104 +101,162 @@ class L2EVPNDCIController(base.DCIController):
 
         :param uuid: uuid of a L2 EVPN DCI.
         """
-        LOG.info("[l2evpn_dcis:get_one] UUID = (%s)", uuid)
+        LOG.info(_LI("[l2evpn_dcis: get_one] UUID = %s"), uuid)
         context = pecan.request.context
         obj_l2evpn_dci = objects.L2EVPNDCI.get(context, uuid)
         return L2EVPNDCI.convert_with_links(obj_l2evpn_dci)
 
-    @expose.expose(L2EVPNDCICollection, wtypes.text)
-    def get_all(self, state=None):
+    @expose.expose(L2EVPNDCICollection, wtypes.text, wtypes.text, wtypes.text)
+    def get_all(self, state=None, east_site_uuid=None, west_site_uuid=None):
         """Retrieve a list of L2 EVPN DCI.
         """
         filters_dict = {}
         if state:
             filters_dict['state'] = state
+        if east_site_uuid:
+            filters_dict['east_site_uuid'] = east_site_uuid
+        if west_site_uuid:
+            filters_dict['west_site_uuid'] = west_site_uuid
+        LOG.info(_LI('[l2evpn_dcis: get_all] filters = %s'), filters_dict)
+
         context = pecan.request.context
         obj_l2evpn_dcis = objects.L2EVPNDCI.list(context, filters=filters_dict)
-        LOG.info('[l2evpn_dcis:get_all] Returned: %s', obj_l2evpn_dcis)
         return L2EVPNDCICollection.convert_with_links(obj_l2evpn_dcis)
 
-    def _create_l2evpn_dci_in_site(self, name, site_uuid, subnet_cidr,
-                                   subnet_allocation_pool, route_target,
-                                   vlan_id):
-        # Step2. Create a Virtual Network
-        vn_name = 'dci-controller-setup-' + name
-        tf_client = tf_vnc_api.Client(site_uuid)
-        vn_uuid = tf_client.create_virtal_network_with_user_defined_subnet(
-            vn_name, subnet_cidr, subnet_allocation_pool, route_target)
+    def _create_l2evpn_dci_in_site(self, site, vn_name, subnet_cidr,
+                                   subnet_allocation_pool, vn_route_target,
+                                   vlan_id, dci_vni):
+        # Create Tungstun Fabric Virtual Network.
+        try:
+            tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
+                                          port=site.tf_api_server_port,
+                                          username=site.tf_username,
+                                          password=site.tf_password,
+                                          project=site.tf_project)
+            vn_uuid = tf_client.create_virtal_network_with_user_defined_subnet(
+                vn_name, subnet_cidr, subnet_allocation_pool, vn_route_target)
+        except Exception as err:
+            LOG.error(_LE("Failed to create virtual network [%(name)s], "
+                          "details %(err)s"),
+                      {'name': vn_name, 'err': err})
+            raise err
 
         vn_vni = tf_client.get_virtual_network_vni(vn_uuid)
 
-        # Step3. Set a EVPN Type 2 DCI static route to vMX.
-        mx_client = mx_api.Client()
-        mx_client.edit_l2evpn_dci_routing_instance_bridge_domain(
-            action='set',
-            site_uuid=site_uuid,
-            vn_name=vn_name,
-            vn_vni=vn_vni,
-            vlan_id=vlan_id,
-            route_target=route_target)
+        # Create L2 EVPN DCI RI bridge domain.
+        try:
+            mx_client = mx_api.Client(host=site.netconf_host,
+                                      port=site.netconf_port,
+                                      username=site.netconf_username,
+                                      password=site.netconf_password)
+            mx_client.create_bridge_domain(
+                vn_name=vn_name,
+                vn_vni=vn_vni,
+                vn_route_target=vn_route_target,
+                vlan_id=vlan_id,
+                dci_vni=dci_vni)
+        except Exception as err:
+            LOG.error(_LE("Failed to Create L2 EVPN DCI RI bridge domain "
+                          "details %s"), err)
 
-    def _clean_l2evpn_dci_in_site(self, name, site_uuid, subnet_cidr,
-                                  route_target, vlan_id):
-        # Step2. Delete a Virtual Network
-        vn_name = 'dci-controller-setup-' + name
-        tf_client = tf_vnc_api.Client(site_uuid)
+            LOG.info(_LE("Rollback virtual network [%s]..."), vn_name)
+            tf_client.retry_to_delete_virtual_network(vn_name)
+            raise err
+
+    def _soft_delete_l2evpn_dci_in_site(self, site, vn_name, subnet_cidr,
+                                        subnet_allocation_pool,
+                                        vn_route_target, vlan_id, dci_vni):
+        tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
+                                      port=site.tf_api_server_port,
+                                      username=site.tf_username,
+                                      password=site.tf_password,
+                                      project=site.tf_project)
         vn_o = tf_client.get_virtual_network_obj_by_name(vn_name)
         vn_vni = vn_o.virtual_network_network_id
-        tf_client.delete_virtual_network(vn_name)
+        tf_client.retry_to_delete_virtual_network(vn_name)
 
-        # Step3. Delete a EVPN Type 5 DCI static route to vMX.
-        mx_client = mx_api.Client()
-        mx_client.edit_l2evpn_dci_routing_instance_bridge_domain(
-            action='delete',
-            site_uuid=site_uuid,
-            vn_name=vn_name,
-            vn_vni=vn_vni,
-            vlan_id=vlan_id,
-            route_target=route_target)
+        mx_client = mx_api.Client(host=site.netconf_host,
+                                  port=site.netconf_port,
+                                  username=site.netconf_username,
+                                  password=site.netconf_password)
+        mx_client.retry_to_delete_bridge_domain(vn_name, vn_vni,
+                                                vn_route_target,
+                                                vlan_id, dci_vni)
+
+    def _get_free_vlan_id(self):
+        # TODO(fanguiju): Check the uniqueness of the VLAN ID.
+        vlan_id = random.randint(*VLAN_ID_RANGE)
+        return vlan_id
+
+    def _get_vn_route_target(self):
+        num = random.randint(*ROUTE_TARGET_RANGE)
+        route_target = 'target:%(asn)s:%(target)s' % {'asn': num,
+                                                      'target': num}
+        return route_target
+
+    def _get_dci_vni(self):
+        vni = random.randint(*DCI_EVPN_TYPE2_VNI)
+        return vni
 
     @expose.expose(L2EVPNDCI, body=types.jsontype,
                    status_code=HTTPStatus.CREATED)
     def post(self, req_body):
         """Create one L2 EVPN DCI.
         """
-        LOG.info("[l2evpn_dcis:port] Req = (%s)", req_body)
+        LOG.info(_LI("[l2evpn_dcis: port] Request body = %s"), req_body)
         context = pecan.request.context
 
         name = req_body['name']
-        east_site_uuid = req_body['east_site_uuid']
-        west_site_uuid = req_body['west_site_uuid']
+        vn_name = VN_NAME_PREFIX + name
+
+        vlan_id = self._get_free_vlan_id()
+        vn_route_target = self._get_vn_route_target()
+        dci_vni = self._get_dci_vni()
+
+        try:
+            east_site = objects.Site.get(context, req_body['east_site_uuid'])
+            west_site = objects.Site.get(context, req_body['west_site_uuid'])
+        except exception.ResourceNotFound as err:
+            LOG.error(_LE("Failed to create L2 EVPN DCI [%(name)s], resource "
+                          "not found, defails %(err)s"),
+                      {'name': name, 'err': err})
+            raise err
+
         subnet_cidr = req_body['subnet_cidr']
         east_site_subnet_allocation_pool = req_body['east_site_subnet_allocation_pool']  # noqa
         west_site_subnet_allocation_pool = req_body['west_site_subnet_allocation_pool']  # noqa
-        route_target = req_body['route_target']
 
-        # TODO(fanguiju): Check the uniqueness of the VLAN ID.
-        vlan_id = random.randint(2, 4094)
-
+        # East Site
         try:
-            pass
-            # Step1. Loop two DCI sites.
-            # TODO(fanguiju): Use two concurrent tasks.
-            self._create_l2evpn_dci_in_site(
-                name, east_site_uuid, subnet_cidr,
-                east_site_subnet_allocation_pool,
-                route_target, vlan_id)
-
-            self._create_l2evpn_dci_in_site(
-                name, west_site_uuid, subnet_cidr,
-                west_site_subnet_allocation_pool,
-                route_target, vlan_id)
+            self._create_l2evpn_dci_in_site(east_site, vn_name, subnet_cidr,
+                                            east_site_subnet_allocation_pool,
+                                            vn_route_target, vlan_id, dci_vni)
         except Exception as err:
-            # TODO(fanguiju): Rollback
-            LOG.error(_LE("Failed create L2 EVPN DCI[%(name)s], "
-                          "details %(err)s"), {'name': name, 'err': err})
+            LOG.error(_LE("Failed to create L2 EVPN DCI for east site, "
+                          "details %s"), err)
+            raise err
+
+        # West Site
+        try:
+            self._create_l2evpn_dci_in_site(west_site, vn_name, subnet_cidr,
+                                            west_site_subnet_allocation_pool,
+                                            vn_route_target, vlan_id, dci_vni)
+        except Exception as err:
+            LOG.error(_LE("Failed to create L2 EVPN DCI for west site, "
+                          "details %s"), err)
+
+            LOG.info(_LI("Rollback east site..."))
+            self._soft_delete_l2evpn_dci_in_site(
+                east_site, vn_name, subnet_cidr,
+                east_site_subnet_allocation_pool,
+                vn_route_target, vlan_id, dci_vni)
             raise err
 
         # Step4. Update the L2 EVPN DCI state.
         req_body['state'] = 'active'
         req_body['vlan_id'] = vlan_id
+        req_body['dci_vni'] = dci_vni
+        req_body['vn_route_target'] = vn_route_target
         obj_l2evpn_dci = objects.L2EVPNDCI(context, **req_body)
         obj_l2evpn_dci.create(context)
 
@@ -218,36 +276,49 @@ class L2EVPNDCIController(base.DCIController):
 
         :param uuid: uuid of a L2 EVPN DCI.
         """
+        LOG.info(_LI('[l2evpn_dci: delete] UUID = %s'), uuid)
         context = pecan.request.context
-        LOG.info('[l2evpn_dci:delete] UUID = (%s)', uuid)
         obj_l2evpn_dci = objects.L2EVPNDCI.get(context, uuid)
 
         name = obj_l2evpn_dci.name
+        vn_name = VN_NAME_PREFIX + name
+
         east_site_uuid = obj_l2evpn_dci.east_site_uuid
+        east_site_subnet_allocation_pool = obj_l2evpn_dci.east_site_subnet_allocation_pool  # noqa
         west_site_uuid = obj_l2evpn_dci.west_site_uuid
+        west_site_subnet_allocation_pool = obj_l2evpn_dci.west_site_subnet_allocation_pool  # noqa
+
         subnet_cidr = obj_l2evpn_dci.subnet_cidr
-        route_target = obj_l2evpn_dci.route_target
+        vn_route_target = obj_l2evpn_dci.vn_route_target
         vlan_id = obj_l2evpn_dci.vlan_id
+        dci_vni = obj_l2evpn_dci.dci_vni
 
         try:
-            pass
-            # Step1. Loop two DCI sites.
-            # TODO(fanguiju): Use two concurrent tasks.
-            self._clean_l2evpn_dci_in_site(name,
-                                           east_site_uuid,
-                                           subnet_cidr,
-                                           route_target,
-                                           vlan_id)
-            self._clean_l2evpn_dci_in_site(name,
-                                           west_site_uuid,
-                                           subnet_cidr,
-                                           route_target,
-                                           vlan_id)
+            east_site = objects.Site.get(context, east_site_uuid)
+            west_site = objects.Site.get(context, west_site_uuid)
         except Exception as err:
-            # TODO(fanguiju): Rollback
+            LOG.error(_LE("Failed to create L2 EVPN DCI [%(name)s], resource "
+                          "not found, defails %(err)s"),
+                      {'name': name, 'err': err})
+
+        try:
+            self._soft_delete_l2evpn_dci_in_site(
+                east_site, vn_name, subnet_cidr,
+                east_site_subnet_allocation_pool,
+                vn_route_target, vlan_id, dci_vni)
+
+            self._soft_delete_l2evpn_dci_in_site(
+                west_site, vn_name, subnet_cidr,
+                west_site_subnet_allocation_pool,
+                vn_route_target, vlan_id, dci_vni)
+
+        except Exception as err:
             LOG.error(_LE("Failed delete L2 EVPN DCI[%(name)s], "
                           "details %(err)s"), {'name': name, 'err': err})
-            raise err
 
-        # Step4. Delete the L2 EVPN DCI record.
+            LOG.info(_LI("Update L2 EVPN DCI state to `inactive`."))
+            obj_l2evpn_dci.state = 'inactve'
+            obj_l2evpn_dci.save(context)
+            return None
+
         obj_l2evpn_dci.destroy(context)
