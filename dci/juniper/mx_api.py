@@ -25,8 +25,6 @@ class Client(object):
         self.username = username
         self.password = password
 
-        self.ping()
-
     def executor(self, cmd_list):
         try:
             with Device(host=self.host,
@@ -62,8 +60,9 @@ class Client(object):
 
     def edit_l3evpn_dci_routing_instance_static_route(self, action,
                                                       subnet_cidr):
-        cmd = '%(action)s routing-instances %(ri)s routing-options static route %(cidr)s discard' % {'action': action, 'ri': EVPN_TYPE5_DCI_ROUTING_INSTANCE, 'cidr': subnet_cidr}  # noqa
-        self.executor(cmd_list=[cmd])
+        cmd_list = []
+        cmd_list.append('%(action)s routing-instances %(ri)s routing-options static route %(cidr)s discard' % {'action': action, 'ri': EVPN_TYPE5_DCI_ROUTING_INSTANCE, 'cidr': subnet_cidr})  # noqa
+        self.executor(cmd_list=cmd_list)
 
     def edit_l2evpn_dci_routing_instance_bridge_domain(self, action,
                                                        vn_name, vn_vni,

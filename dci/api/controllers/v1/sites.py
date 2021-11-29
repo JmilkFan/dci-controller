@@ -18,6 +18,8 @@ from dci.common.i18n import _LI
 
 LOG = log.getLogger(__name__)
 TF_DEFAULT_PROJECT = 'admin'
+TF_DEFAULT_PORT = 8082
+NETCONF_OVER_SSH_DEFAULT_PORT = 830
 
 
 class Site(base.APIBase):
@@ -110,16 +112,18 @@ class SiteController(base.DCIController):
                               site['tf_password'],
                               site['tf_project'])
         except Exception as err:
+            # TODO(fanguiju): API response exception details and failure codes.
             LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
                           "site login informations %s."), site)
             raise err
 
         # Ping MX NETCONF API
         try:
-            mx_api.Client(site['netconf_host'],
-                          site['netconf_port'],
-                          site['netconf_username'],
-                          site['netconf_password'])
+            mx_client = mx_api.Client(site['netconf_host'],
+                                      site['netconf_port'],
+                                      site['netconf_username'],
+                                      site['netconf_password'])
+            mx_client.ping()
         except Exception as err:
             LOG.error(_LE("Failed to PING MX NETCONF Server, "
                           "site login informations %s."), site)
@@ -157,6 +161,10 @@ class SiteController(base.DCIController):
         context = pecan.request.context
 
         req_body['tf_project'] = req_body.get('tf_project', TF_DEFAULT_PROJECT)
+        req_body['tf_api_server_port'] = req_body.get('tf_api_server_port',
+                                                      TF_DEFAULT_PORT)
+        req_body['netconf_port'] = req_body.get('netconf_port',
+                                                NETCONF_OVER_SSH_DEFAULT_PORT)
         self._ping_check(req_body)
 
         req_body['state'] = 'active'

@@ -161,9 +161,6 @@ class Connection(api.Connection):
     def site_create(self, context, values):
         if not values.get('uuid'):
             values['uuid'] = uuidutils.generate_uuid()
-        if not values.get('tf_api_server_port'):
-            # Tungsten Fabric Config API Server Default Port 8082
-            values['tf_api_server_port'] = 8082
 
         site = models.Site()
         site.update(values)

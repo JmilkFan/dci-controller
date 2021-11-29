@@ -147,7 +147,7 @@ class L3EVPNDCIController(base.DCIController):
                           "[%(cidr)s], details %(err)s"),
                       {'cidr': subnet_cidr, 'err': err})
 
-            LOG.info(_LE("Rollback virtual network %s"), vn_name)
+            LOG.info(_LE("Rollback virtual network [%s]..."), vn_name)
             self._retry_to_delete_virtual_network(tf_client, vn_name)
 
             raise err
@@ -232,7 +232,7 @@ class L3EVPNDCIController(base.DCIController):
             LOG.error(_LE("Failed to create L3 EVPN DCI for west site, "
                           "details %s"), err)
 
-            LOG.info(_LI("Rollback east site."))
+            LOG.info(_LI("Rollback east site..."))
             self._soft_delete_l3evpn_dci_in_site(east_site, vn_name,
                                                  east_site_subnet_cidr)
             raise err

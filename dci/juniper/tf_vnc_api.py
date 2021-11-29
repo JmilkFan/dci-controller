@@ -41,11 +41,17 @@ class Client(object):
             self._create_default_ipam_with_user_defined_subnet()
 
     def _connect(self, host, port, username, password, project):
-        self.client = vnc_api.VncApi(api_server_host=host,
-                                     api_server_port=port,
-                                     username=username,
-                                     password=password,
-                                     tenant_name=project)
+        try:
+            self.client = vnc_api.VncApi(api_server_host=host,
+                                         api_server_port=port,
+                                         username=username,
+                                         password=password,
+                                         tenant_name=project)
+        except Exception as err:
+            LOG.error(_LE("Failed to connect Tungsten Fabric VNC API "
+                          "Server [%(host)s], details %(err)s"),
+                      {'host': host, 'err': err})
+            raise err
 
     def _get_default_project_obj(self):
         try:
