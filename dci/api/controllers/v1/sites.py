@@ -9,10 +9,15 @@ from dci.api.controllers import base
 from dci.api.controllers import link
 from dci.api.controllers import types
 from dci.api import expose
+from dci.juniper import mx_api
+from dci.juniper import tf_vnc_api
 from dci import objects
+from dci.common.i18n import _LE
+from dci.common.i18n import _LI
 
 
 LOG = log.getLogger(__name__)
+TF_DEFAULT_PROJECT = 'admin'
 
 
 class Site(base.APIBase):
@@ -52,8 +57,8 @@ class Site(base.APIBase):
     tf_password = wtypes.text
     """The Tungsten Fabric password."""
 
-    tf_project_uuid = types.uuid
-    """The UUID of the Tungsten Fabric Project."""
+    tf_project = wtypes.text
+    """The Tungsten Fabric Project."""
 
     state = wtypes.text
     """State of DCI Site."""
@@ -96,13 +101,37 @@ class SiteController(base.DCIController):
     """REST controller for DCI site Controller.
     """
 
+    def _ping_check(self, site):
+        # Ping TF VNC API
+        try:
+            tf_vnc_api.Client(site['tf_api_server_host'],
+                              site['tf_api_server_port'],
+                              site['tf_username'],
+                              site['tf_password'],
+                              site['tf_project'])
+        except Exception as err:
+            LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
+                          "site login informations %s."), site)
+            raise err
+
+        # Ping MX NETCONF API
+        try:
+            mx_api.Client(site['netconf_host'],
+                          site['netconf_port'],
+                          site['netconf_username'],
+                          site['netconf_password'])
+        except Exception as err:
+            LOG.error(_LE("Failed to PING MX NETCONF Server, "
+                          "site login informations %s."), site)
+            raise err
+
     @expose.expose(Site, wtypes.text)
     def get_one(self, uuid):
         """Get a single Site by UUID.
 
         :param uuid: uuid of a Site.
         """
-        LOG.info("[sites:get_one] UUID = (%s)", uuid)
+        LOG.info(_LI("[sites: get_one] UUID = (%s)"), uuid)
         context = pecan.request.context
         obj_site = objects.Site.get(context, uuid)
         return Site.convert_with_links(obj_site)
@@ -114,20 +143,22 @@ class SiteController(base.DCIController):
         filters_dict = {}
         if state:
             filters_dict['state'] = state
+
+        LOG.info(_LI('[sites: get_all] filters = %s'), filters_dict)
         context = pecan.request.context
         obj_sites = objects.Site.list(context, filters=filters_dict)
-        LOG.info('[sites:get_all] Returned: %s', obj_sites)
         return SiteCollection.convert_with_links(obj_sites)
 
     @expose.expose(Site, body=types.jsontype, status_code=HTTPStatus.CREATED)
     def post(self, req_body):
         """Create one Site.
         """
-        LOG.info("[sites:port] Req = (%s)", req_body)
+        LOG.info(_LI("[sites: port] Request body = %s"), req_body)
         context = pecan.request.context
 
-        # TODO(fanguiju): Get DCI site state through health check mechanism,
-        #                 default state is `active`.
+        req_body['tf_project'] = req_body.get('tf_project', TF_DEFAULT_PROJECT)
+        self._ping_check(req_body)
+
         req_body['state'] = 'active'
         obj_site = objects.Site(context, **req_body)
         obj_site.create(context)
@@ -138,13 +169,15 @@ class SiteController(base.DCIController):
     def put(self, uuid, req_body):
         """Update a Site.
         """
-        LOG.info("[sites:put] Req = (%s)", req_body)
+        LOG.info("[sites: put] Request body = %s", req_body)
         context = pecan.request.context
 
         obj_site = objects.Site.get(context, uuid)
         for k, v in req_body.items():
             if getattr(obj_site, k) != v:
                 setattr(obj_site, k, v)
+        self._ping_check(obj_site.as_dict())
+
         obj_site.save(context)
         return Site.convert_with_links(obj_site)
 

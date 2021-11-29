@@ -66,7 +66,7 @@ class Site(Base):
     tf_api_server_port = Column(Integer, nullable=True)
     tf_username = Column(String(36), nullable=False)
     tf_password = Column(String(36), nullable=False)
-    tf_project_uuid = Column(String(36), nullable=True)
+    tf_project = Column(String(36), nullable=True)
     state = Column(Enum('active', 'inactive'), nullable=False)
 
 

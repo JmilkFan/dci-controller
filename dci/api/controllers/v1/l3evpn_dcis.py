@@ -11,12 +11,15 @@ from dci.api.controllers import types
 from dci.api import expose
 from dci.common import exception
 from dci.common.i18n import _LE
+from dci.common.i18n import _LI
 from dci.juniper import mx_api
 from dci.juniper import tf_vnc_api
 from dci import objects
 
 
 LOG = log.getLogger(__name__)
+
+VN_NAME_PREFIX = 'dci-controller-setup-'
 
 
 class L3EVPNDCI(base.APIBase):
@@ -68,7 +71,8 @@ class L3EVPNDCI(base.APIBase):
 
 
 class L3EVPNDCICollection(base.APIBase):
-    """API representation of a collection of L3 EVPN DCI."""
+    """API representation of a collection of L3 EVPN DCI.
+    """
 
     l3evpn_dcis = [L3EVPNDCI]
     """A list containing L3 EVPN DCI objects"""
@@ -91,80 +95,151 @@ class L3EVPNDCIController(base.DCIController):
 
         :param uuid: uuid of a L3 EVPN DCI.
         """
-        LOG.info("[l3evpn_dcis:get_one] UUID = (%s)", uuid)
+        LOG.info(_LI("[l3evpn_dcis: get_one] UUID = %s"), uuid)
         context = pecan.request.context
         obj_l3evpn_dci = objects.L3EVPNDCI.get(context, uuid)
         return L3EVPNDCI.convert_with_links(obj_l3evpn_dci)
 
-    @expose.expose(L3EVPNDCICollection, wtypes.text)
-    def get_all(self, state=None):
+    @expose.expose(L3EVPNDCICollection, wtypes.text, wtypes.text, wtypes.text)
+    def get_all(self, state=None, east_site_uuid=None, west_site_uuid=None):
         """Retrieve a list of L3 EVPN DCI.
         """
         filters_dict = {}
         if state:
             filters_dict['state'] = state
+        if east_site_uuid:
+            filters_dict['east_site_uuid'] = east_site_uuid
+        if west_site_uuid:
+            filters_dict['west_site_uuid'] = west_site_uuid
+        LOG.info(_LI('[l3evpn_dcis: get_all] filters = %s'), filters_dict)
+
         context = pecan.request.context
         obj_l3evpn_dcis = objects.L3EVPNDCI.list(context, filters=filters_dict)
-        LOG.info('[l3evpn_dcis:get_all] Returned: %s', obj_l3evpn_dcis)
         return L3EVPNDCICollection.convert_with_links(obj_l3evpn_dcis)
 
-    def _create_l3evpn_dci_in_site(self, name, site_uuid, subnet_cidr):
-        # Step2. Create a Virtual Network
-        vn_name = 'dci-controller-setup-' + name
-        tf_client = tf_vnc_api.Client(site_uuid)
-        tf_client.create_virtal_network_with_user_defined_subnet(vn_name,
-                                                                 subnet_cidr)
+    def _create_l3evpn_dci_in_site(self, site, vn_name, subnet_cidr):
 
-        # Step3. Set a EVPN Type 5 DCI static route to vMX.
-        mx_client = mx_api.Client()
-        mx_client.edit_l3evpn_dci_routing_instance_static_route(
-            action='set', site_uuid=site_uuid, subnet_cidr=subnet_cidr)
+        # Create Tungstun Fabric Virtual Network.
+        try:
+            tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
+                                          port=site.tf_api_server_port,
+                                          username=site.tf_username,
+                                          password=site.tf_password,
+                                          project=site.tf_project)
+            tf_client.create_virtal_network_with_user_defined_subnet(
+                vn_name, subnet_cidr)
+        except Exception as err:
+            LOG.error(_LE("Failed to create virtual network [%(name)s], "
+                          "details %(err)s"),
+                      {'name': vn_name, 'err': err})
+            raise err
 
-    def _clean_l3evpn_dci_in_site(self, name, site_uuid, subnet_cidr):
-        # Step2. Delete a Virtual Network
-        vn_name = 'dci-controller-setup-' + name
-        tf_client = tf_vnc_api.Client(site_uuid)
-        tf_client.delete_virtual_network(vn_name)
+        # Edit L3 EVPN DCI RI static route.
+        try:
+            mx_client = mx_api.Client(host=site.netconf_host,
+                                      port=site.netconf_port,
+                                      username=site.netconf_username,
+                                      password=site.netconf_password)
+            mx_client.edit_l3evpn_dci_routing_instance_static_route(
+                action='set', subnet_cidr=subnet_cidr)
+        except Exception as err:
+            LOG.error(_LE("Failed to edit L3 EVPN DCI RI static route "
+                          "[%(cidr)s], details %(err)s"),
+                      {'cidr': subnet_cidr, 'err': err})
 
-        # Step3. Delete a EVPN Type 5 DCI static route to vMX.
-        mx_client = mx_api.Client()
-        mx_client.edit_l3evpn_dci_routing_instance_static_route(
-            action='delete', site_uuid=site_uuid, subnet_cidr=subnet_cidr)
+            LOG.info(_LE("Rollback virtual network %s"), vn_name)
+            self._retry_to_delete_virtual_network(tf_client, vn_name)
+
+            raise err
+
+    def _retry_to_delete_virtual_network(self, tf_client, vn_name):
+        retry = 3
+        while retry:
+            try:
+                tf_client.delete_virtual_network(vn_name)
+                break
+            except Exception as err:
+                LOG.error(_LE("Failed to delete virtual network, "
+                              "retry count [-%(cnt)s], details %(err)s"),
+                          {'cnt': retry, 'err': err})
+                retry -= 1
+
+    def _retry_to_delete_static_route(self, mx_client, subnet_cidr):
+        retry = 3
+        while retry:
+            try:
+                mx_client.edit_l3evpn_dci_routing_instance_static_route(
+                    action='delete', subnet_cidr=subnet_cidr)
+                break
+            except Exception as err:
+                LOG.error(_LE("Failed to delete static route in MX, "
+                              "retry count [-%(cnt)s], details %(err)s"),
+                          {'cnt': retry, 'err': err})
+                retry -= 1
+
+    def _soft_delete_l3evpn_dci_in_site(self, site, vn_name, subnet_cidr):
+
+        tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
+                                      port=site.tf_api_server_port,
+                                      username=site.tf_username,
+                                      password=site.tf_password,
+                                      project=site.tf_project)
+        self._retry_to_delete_virtual_network(tf_client, vn_name)
+
+        mx_client = mx_api.Client(host=site.netconf_host,
+                                  port=site.netconf_port,
+                                  username=site.netconf_username,
+                                  password=site.netconf_password)
+        self._retry_to_delete_static_route(mx_client, subnet_cidr)
 
     @expose.expose(L3EVPNDCI, body=types.jsontype,
                    status_code=HTTPStatus.CREATED)
     def post(self, req_body):
         """Create one L3 EVPN DCI.
         """
-        LOG.info("[l3evpn_dcis:port] Req = (%s)", req_body)
+        LOG.info(_LI("[l3evpn_dcis: port] Request body = %s"), req_body)
         context = pecan.request.context
 
         name = req_body['name']
-        east_site_uuid = req_body['east_site_uuid']
-        east_site_subnet_cidr = req_body['east_site_subnet_cidr']
-        west_site_uuid = req_body['west_site_uuid']
-        west_site_subnet_cidr = req_body['west_site_subnet_cidr']
-
+        vn_name = VN_NAME_PREFIX + name
         try:
-            # Step1. Loop two DCI sites.
-            # TODO(fanguiju): Use two concurrent tasks.
-            self._create_l3evpn_dci_in_site(name,
-                                            east_site_uuid,
-                                            east_site_subnet_cidr)
-            self._create_l3evpn_dci_in_site(name,
-                                            west_site_uuid,
-                                            west_site_subnet_cidr)
-        except Exception as err:
-            # TODO(fanguiju): Rollback
-            LOG.error(_LE("Failed create L3 EVPN DCI[%(name)s], "
-                          "details %(err)s"), {'name': name, 'err': err})
+            east_site = objects.Site.get(context, req_body['east_site_uuid'])
+            west_site = objects.Site.get(context, req_body['west_site_uuid'])
+        except exception.ResourceNotFound as err:
+            LOG.error(_LE("Failed to create L3 EVPN DCI [%(name)s], resource "
+                          "not found, defails %(err)s"),
+                      {'name': name, 'err': err})
             raise err
 
-        # Step4. Update the L3 EVPN DCI state.
+        east_site_subnet_cidr = req_body['east_site_subnet_cidr']
+        west_site_subnet_cidr = req_body['west_site_subnet_cidr']
+
+        # TODO(fanguiju): Use two concurrent tasks.
+        # East Site
+        try:
+            self._create_l3evpn_dci_in_site(east_site, vn_name,
+                                            east_site_subnet_cidr)
+        except Exception as err:
+            LOG.error(_LE("Failed to create L3 EVPN DCI for east site, "
+                          "details %s"), err)
+            raise err
+
+        # West Site
+        try:
+            self._create_l3evpn_dci_in_site(west_site, vn_name,
+                                            west_site_subnet_cidr)
+        except Exception as err:
+            LOG.error(_LE("Failed to create L3 EVPN DCI for west site, "
+                          "details %s"), err)
+
+            LOG.info(_LI("Rollback east site."))
+            self._soft_delete_l3evpn_dci_in_site(east_site, vn_name,
+                                                 east_site_subnet_cidr)
+            raise err
+
         req_body['state'] = 'active'
         obj_l3evpn_dci = objects.L3EVPNDCI(context, **req_body)
         obj_l3evpn_dci.create(context)
-
         return L3EVPNDCI.convert_with_links(obj_l3evpn_dci)
 
     @expose.expose(L3EVPNDCI, wtypes.text, body=types.jsontype,
@@ -182,29 +257,34 @@ class L3EVPNDCIController(base.DCIController):
         :param uuid: uuid of a L3 EVPN DCI.
         """
         context = pecan.request.context
-        LOG.info('[l3evpn_dci:delete] UUID = (%s)', uuid)
+        LOG.info(_LI('[l3evpn_dci: delete] UUID = %s'), uuid)
         obj_l3evpn_dci = objects.L3EVPNDCI.get(context, uuid)
 
         name = obj_l3evpn_dci.name
+        vn_name = VN_NAME_PREFIX + name
+
         east_site_uuid = obj_l3evpn_dci.east_site_uuid
-        east_site_subnet_cidr = obj_l3evpn_dci.east_site_subnet_cidr
         west_site_uuid = obj_l3evpn_dci.west_site_uuid
-        west_site_subnet_cidr = obj_l3evpn_dci.west_site_subnet_cidr
+        try:
+            east_site = objects.Site.get(context, east_site_uuid)
+            west_site = objects.Site.get(context, west_site_uuid)
+        except exception.ResourceNotFound as err:
+            LOG.error(_LE("Failed to create L3 EVPN DCI [%(name)s], resource "
+                          "not found, defails %(err)s"),
+                      {'name': name, 'err': err})
 
         try:
-            # Step1. Loop two DCI sites.
-            # TODO(fanguiju): Use two concurrent tasks.
-            self._clean_l3evpn_dci_in_site(name,
-                                           east_site_uuid,
-                                           east_site_subnet_cidr)
-            self._clean_l3evpn_dci_in_site(name,
-                                           west_site_uuid,
-                                           west_site_subnet_cidr)
+            self._soft_delete_l3evpn_dci_in_site(
+                east_site, vn_name, obj_l3evpn_dci.east_site_subnet_cidr)
+            self._soft_delete_l3evpn_dci_in_site(
+                west_site, vn_name, obj_l3evpn_dci.west_site_subnet_cidr)
         except Exception as err:
-            # TODO(fanguiju): Rollback
             LOG.error(_LE("Failed delete L3 EVPN DCI[%(name)s], "
                           "details %(err)s"), {'name': name, 'err': err})
-            raise err
 
-        # Step4. Delete the L3 EVPN DCI record.
+            LOG.info(_LI("Update L3 EVPN DCI state to `inactive`."))
+            obj_l3evpn_dci.state = 'inactve'
+            obj_l3evpn_dci.save(context)
+            return None
+
         obj_l3evpn_dci.destroy(context)

@@ -137,3 +137,7 @@ class ResourceNotFound(NotFound):
 
 class RecordAlreadyExists(DCIException):
     _msg_fmt = _("Database record with uuid %(uuid)s already exists.")
+
+
+class MXDeviceNotConnected(DCIException):
+    _msg_fmt = _("Not connected to MX device %(name)s.")

@@ -1,4 +1,3 @@
-import pecan
 from vnc_api import exceptions as vnc_api_exceptions
 from vnc_api import vnc_api
 
@@ -7,14 +6,12 @@ from oslo_log import log
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
 from dci.common.i18n import _LW
-from dci import objects
 
 
 LOG = log.getLogger(__name__)
 
 
 TF_DEFAULT_DOMAIN = 'default-domain'
-TF_DEFAULT_PROJECT = 'project01'
 TF_DEFAULT_IPAM = 'dci-controller-default-ipam'
 TF_DEFAULT_ROUTR_TARGET = 'target:100:100'
 
@@ -23,42 +20,41 @@ class Client(object):
     """Tungsten Fabric client by VNC API Client.
     """
 
-    def __init__(self, site_uuid):
-        self.site_uuid = site_uuid
+    def __init__(self, host, port, username, password, project):
+
+        self.project_name = project
+
         self.client = None
-
         if not self.client:
-            self.connect()
+            self._connect(host, port, username, password, project)
 
-        # NOTE(fanguiju): Specialized IPAM object.
+        # NOTE(fanguiju): Use the special IPAM dci-controller-default-ipam.
         self.ipam_o = None
         try:
             self.ipam_o = self.client.network_ipam_read(
                 fq_name=[TF_DEFAULT_DOMAIN,
-                         TF_DEFAULT_PROJECT,
+                         project,
                          TF_DEFAULT_IPAM])
         except vnc_api_exceptions.NoIdError:
-            LOG.info(_LI("Init default IPAM [defailt-ipam]"))
+            LOG.info(_LI("Initialization default IPAM "
+                         "[dci-controller-default-ipam.]"))
             self._create_default_ipam_with_user_defined_subnet()
 
-    def connect(self):
-        context = pecan.request.context
-        obj_site = objects.Site.get(context, self.site_uuid)
-        self.client = vnc_api.VncApi(
-            api_server_host=obj_site.tf_api_server_host,
-            api_server_port=obj_site.tf_api_server_port,
-            tenant_name=TF_DEFAULT_PROJECT,
-            username=obj_site.tf_username,
-            password=obj_site.tf_password)
+    def _connect(self, host, port, username, password, project):
+        self.client = vnc_api.VncApi(api_server_host=host,
+                                     api_server_port=port,
+                                     username=username,
+                                     password=password,
+                                     tenant_name=project)
 
     def _get_default_project_obj(self):
         try:
             project_o = self.client.project_read(fq_name=[TF_DEFAULT_DOMAIN,
-                                                          TF_DEFAULT_PROJECT])
+                                                          self.project_name])
         except vnc_api_exceptions.NoIdError as err:
             LOG.error(_LE("Failedto get default project [%(project)s], "
                           "details %(err)s"),
-                      {'project': TF_DEFAULT_DOMAIN + ':' + TF_DEFAULT_PROJECT,
+                      {'project': TF_DEFAULT_DOMAIN + ':' + self.project_name,
                        'err': err})
             raise err
         return project_o
@@ -150,7 +146,7 @@ class Client(object):
     def get_virtual_network_obj_by_name(self, vn_name):
         try:
             vn_o = self.client.virtual_network_read(
-                fq_name=[TF_DEFAULT_DOMAIN, TF_DEFAULT_PROJECT, vn_name])
+                fq_name=[TF_DEFAULT_DOMAIN, self.project_name, vn_name])
         except vnc_api_exceptions.NoIdError as err:
             LOG.error(_LE("Failed to get virtual network [%(name)s], "
                           "deails %(err)s"),
@@ -161,7 +157,7 @@ class Client(object):
     def delete_virtual_network(self, vn_name):
         try:
             self.client.virtual_network_delete(
-                fq_name=[TF_DEFAULT_DOMAIN, TF_DEFAULT_PROJECT, vn_name])
+                fq_name=[TF_DEFAULT_DOMAIN, self.project_name, vn_name])
         except vnc_api_exceptions.NoIdError:
             LOG.warning(_LW("Failed to delete virtual network [%s], "
                             "not found."), vn_name)
