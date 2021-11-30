@@ -6,6 +6,7 @@ from oslo_log import log
 
 from dci.common import exception
 from dci.common.i18n import _LE
+from dci.common.i18n import _LI
 
 
 LOG = log.getLogger(__name__)
@@ -25,20 +26,50 @@ class Client(object):
         self.username = username
         self.password = password
 
-    def executor(self, cmd_list):
+    def _get_configuration(self, dev, filter_xml):
+        data = dev.rpc.get_config(options={'database': 'committed',
+                                           'format': 'json'},
+                                  filter_xml=filter_xml)
+        return data
+
+    def _edit_configuration(self, dev, cmd_list):
+        with Config(dev) as cu:
+            for cmd in cmd_list:
+                cu.load(cmd, format='set')
+            cu.pdiff()
+            cu.commit()
+
+    def configure_executor(self, mode, cmd_list=None, filter_xml=None):
+        if not isinstance(mode, str) or mode not in ['ping', 'get', 'edit']:
+            raise exception.InvalidParameterValue(
+                err=("MX configure executor only support mode "
+                     "[ping, get, edit], got [%s]") % mode)
+
         try:
             with Device(host=self.host,
                         port=self.port,
                         user=self.username,
                         password=self.password) as dev:
-                if not dev.connected:
+
+                if mode == 'ping' and not dev.connected:
                     raise exception.MXDeviceNotConnected(name=self.host)
-                if cmd_list and isinstance(cmd_list, list):
-                    with Config(dev) as cu:
-                        for cmd in cmd_list:
-                            cu.load(cmd, format='set')
-                        cu.pdiff()
-                        cu.commit()
+
+                if mode == 'get':
+                    if not filter_xml or not isinstance(filter_xml, str):
+                        raise exception.InvalidParameterValue(
+                            err=("configure_executor get mode only support "
+                                 "filter xml string, got [%s]") % filter_xml)
+                    else:
+                        return self._get_configuration(dev, filter_xml)
+
+                if mode == 'edit':
+                    if not cmd_list or not isinstance(cmd_list, list):
+                        raise exception.InvalidParameterValue(
+                            err=("configure_executor edit mode only support "
+                                 "commands list, got [%s]") % cmd_list)
+                    else:
+                        self._edit_configuration(dev, cmd_list)
+
         except junos_exception.ConnectError as err:
             LOG.error(_LE("Failed to connect to MX Device [%(name)s], "
                           "details %(err)s."),
@@ -56,13 +87,13 @@ class Client(object):
             raise err
 
     def ping(self):
-        self.executor(cmd_list=[])
+        self.configure_executor(mode='ping', cmd_list=[])
 
     def edit_l3evpn_dci_routing_instance_static_route(self, action,
                                                       subnet_cidr):
         cmd_list = []
         cmd_list.append('%(action)s routing-instances %(ri)s routing-options static route %(cidr)s discard' % {'action': action, 'ri': EVPN_TYPE5_DCI_ROUTING_INSTANCE, 'cidr': subnet_cidr})  # noqa
-        self.executor(cmd_list=cmd_list)
+        self.configure_executor(mode='edit', cmd_list=cmd_list)
 
     def create_static_route(self, subnet_cidr):
         self.edit_l3evpn_dci_routing_instance_static_route(
@@ -83,35 +114,35 @@ class Client(object):
 
     def edit_l2evpn_dci_routing_instance_bridge_domain(self, action, vn_name,
                                                        vn_vni, vn_route_target,
-                                                       vlan_id, dci_vni):
+                                                       inter_vlan_id, dci_vni):
         cmd_list = []
 
         # Face To TF.
         cmd_list.append('%(action)s routing-instances %(ri)s protocols evpn vni-options vni %(vni)s vrf-target %(rt)s' % {'action': action, 'ri': FACE_TO_TF_ROUTING_INSTANCE, 'vni': vn_vni, 'rt': vn_route_target})  # noqa
         cmd_list.append('%(action)s routing-instances %(ri)s bridge-domains %(bd)s domain-type bridge' % {'action': action, 'ri': FACE_TO_TF_ROUTING_INSTANCE, 'bd': vn_name})  # noqa
         cmd_list.append('%(action)s routing-instances %(ri)s bridge-domains %(bd)s vxlan vni %(vni)s' % {'action': action, 'ri': FACE_TO_TF_ROUTING_INSTANCE, 'bd': vn_name, 'vni': vn_vni})  # noqa
-        cmd_list.append('%(action)s routing-instances %(ri)s bridge-domains %(bd)s vlan-id %(vlan_id)s' % {'action': action, 'ri': FACE_TO_TF_ROUTING_INSTANCE, 'bd': vn_name, 'vlan_id': vlan_id})  # noqa
-        cmd_list.append('%(action)s interfaces lt-0/0/10 unit 0 family bridge vlan-id-list %(vlan_id)s' % {'action': action, 'vlan_id': vlan_id})  # noqa
+        cmd_list.append('%(action)s routing-instances %(ri)s bridge-domains %(bd)s vlan-id %(inter_vlan_id)s' % {'action': action, 'ri': FACE_TO_TF_ROUTING_INSTANCE, 'bd': vn_name, 'inter_vlan_id': inter_vlan_id})  # noqa
+        cmd_list.append('%(action)s interfaces lt-0/0/10 unit 0 family bridge vlan-id-list %(inter_vlan_id)s' % {'action': action, 'inter_vlan_id': inter_vlan_id})  # noqa
 
         # Face To DCI.
         cmd_list.append('%(action)s routing-instances %(ri)s bridge-domains %(bd)s domain-type bridge' % {'action': action, 'ri': FACE_TO_DCI_ROUTING_INSTANCE, 'bd': vn_name})  # noqa
         cmd_list.append('%(action)s routing-instances %(ri)s bridge-domains %(bd)s vxlan vni %(vni)s' % {'action': action, 'ri': FACE_TO_DCI_ROUTING_INSTANCE, 'bd': vn_name, 'vni': dci_vni})  # noqa
-        cmd_list.append('%(action)s routing-instances %(ri)s bridge-domains %(bd)s vlan-id %(vlan_id)s' % {'action': action, 'ri': FACE_TO_DCI_ROUTING_INSTANCE, 'bd': vn_name, 'vlan_id': vlan_id})  # noqa
-        cmd_list.append('%(action)s interfaces lt-0/0/10 unit 1 family bridge vlan-id-list %(vlan_id)s' % {'action': action, 'vlan_id': vlan_id})  # noqa
-        self.executor(cmd_list=cmd_list)
+        cmd_list.append('%(action)s routing-instances %(ri)s bridge-domains %(bd)s vlan-id %(inter_vlan_id)s' % {'action': action, 'ri': FACE_TO_DCI_ROUTING_INSTANCE, 'bd': vn_name, 'inter_vlan_id': inter_vlan_id})  # noqa
+        cmd_list.append('%(action)s interfaces lt-0/0/10 unit 1 family bridge vlan-id-list %(inter_vlan_id)s' % {'action': action, 'inter_vlan_id': inter_vlan_id})  # noqa
+        self.configure_executor(mode='edit', cmd_list=cmd_list)
 
     def create_bridge_domain(self, vn_name, vn_vni, vn_route_target,
-                             vlan_id, dci_vni):
+                             inter_vlan_id, dci_vni):
         self.edit_l2evpn_dci_routing_instance_bridge_domain(
             action='set',
             vn_name=vn_name,
             vn_vni=vn_vni,
             vn_route_target=vn_route_target,
-            vlan_id=vlan_id,
+            inter_vlan_id=inter_vlan_id,
             dci_vni=dci_vni)
 
     def retry_to_delete_bridge_domain(self, vn_name, vn_vni, vn_route_target,
-                                      vlan_id, dci_vni):
+                                      inter_vlan_id, dci_vni):
         retry = 3
         while retry:
             try:
@@ -120,7 +151,7 @@ class Client(object):
                     vn_name=vn_name,
                     vn_vni=vn_vni,
                     vn_route_target=vn_route_target,
-                    vlan_id=vlan_id,
+                    inter_vlan_id=inter_vlan_id,
                     dci_vni=dci_vni)
                 break
             except Exception as err:
@@ -128,3 +159,17 @@ class Client(object):
                               "retry count [-%(cnt)s], details %(err)s"),
                           {'cnt': retry, 'err': err})
                 retry -= 1
+
+    def get_used_vid_and_vni_in_dci_bridge_domains(self):
+        filter_xml = "<configuration><routing-instances><instance><name>%s</name><bridge-domains><domain/></bridge-domains></instance></routing-instances></configuration>" % FACE_TO_DCI_ROUTING_INSTANCE  # noqa
+        inter_vlan_id_list = []
+        dci_vni_list = []
+        data = self.configure_executor(mode='get', filter_xml=filter_xml)
+        domains = data['configuration']['routing-instances']['instance'][0]['bridge-domains']['domain']  # noqa
+        for domain in domains:
+            inter_vlan_id_list.append(domain['vlan-id'])
+            dci_vni_list.append(domain['vxlan']['vni'])
+
+        LOG.info(_LI("Get used inter_vlan_ids %(vid)s and dci_vnis %(vni)s"),
+                 {'vid': inter_vlan_id_list, 'vni': dci_vni_list})
+        return inter_vlan_id_list, dci_vni_list

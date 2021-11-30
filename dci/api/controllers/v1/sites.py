@@ -9,11 +9,11 @@ from dci.api.controllers import base
 from dci.api.controllers import link
 from dci.api.controllers import types
 from dci.api import expose
+from dci.common.i18n import _LE
+from dci.common.i18n import _LI
 from dci.juniper import mx_api
 from dci.juniper import tf_vnc_api
 from dci import objects
-from dci.common.i18n import _LE
-from dci.common.i18n import _LI
 
 
 LOG = log.getLogger(__name__)

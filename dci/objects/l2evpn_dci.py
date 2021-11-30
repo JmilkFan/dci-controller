@@ -26,7 +26,7 @@ class L2EVPNDCI(base.DCIObject, object_base.VersionedObjectDictCompat):
         'east_site_subnet_allocation_pool': object_fields.StringField(nullable=False),  # noqa
         'west_site_subnet_allocation_pool': object_fields.StringField(nullable=False),  # noqa
         'vn_route_target': object_fields.StringField(nullable=False),
-        'vlan_id': object_fields.IntegerField(nullable=False),
+        'inter_vlan_id': object_fields.IntegerField(nullable=False),
         'dci_vni': object_fields.IntegerField(nullable=False),
         'state': object_fields.EnumField(valid_values=['active', 'inactive'],
                                          nullable=False)
