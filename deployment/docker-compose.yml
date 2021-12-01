@@ -1,0 +1,17 @@
+version: "3.3"
+services:
+    dci-controller-api:
+        image: dci-controller-api:v1.0
+        volumes:
+            - type: bind
+              source: /etc/dci-controller/dci-controller.conf
+              target: /etc/dci-controller/dci-controller.conf
+            - type: bind
+              source: /etc/dci-controller/dci-controller.sqlite
+              target: /etc/dci-controller/dci-controller.sqlite
+            - type: bind
+              source: /var/log/dci-controller/
+              target: /var/log/dci-controller/
+        command: --config-file /etc/dci-controller/dci-controller.conf
+        ports:
+            - "6699:6699"

@@ -15,5 +15,6 @@ Overview
     :maxdepth: 1
 
     install/install-from-source
-    install/config-wsgi
-    modules/modules.rst
+    install/config
+    install/deploy-via-wsgi.rst
+    api-ref/v1/apis
