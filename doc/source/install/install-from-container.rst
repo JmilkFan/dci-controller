@@ -12,6 +12,7 @@ Install from docker container
 
         $ cp ~/workspace/dci-controller/deployment/Dockerfile ~/workspace/
         $ cp ~/workspace/dci-controller/deployment/docker-entrypoint.sh ~/workspace/
+        $ cp ~/workspace/dci-controller/deployment/docker-compose.yml ~/workspace/
         $ cd ~/workspace/
         $ docker image build  -t dci-controller-api:v1.0 .
         # or
@@ -57,8 +58,10 @@ Install from docker container
         $ touch /etc/dci-controller/dci-controller.sqlite
         $ mkdir /var/log/dci-controller/
 
-        $ cd ~/workspace/dci-controller/deployment/
+        $ cd ~/workspace
         $ docker-compose -f docker-compose.yml up -d
         $ docker ps
         #docker-compose -f docker-compose.yml down
+
+        $ tailf /var/log/dci-controller/dci-controller-api.log
    ..
