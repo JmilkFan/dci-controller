@@ -2,6 +2,10 @@ FROM centos:centos7.9.2009
 
 MAINTAINER fanguiju
 
+# proxy
+ARG http_proxy
+ARG https_proxy
+
 ## YUM
 RUN yum install -y epel-release git gcc gcc-c++ make
 RUN yum install -y scons
@@ -37,9 +41,13 @@ RUN cp -r etc/dci-controller/ /etc/
 # clean source code
 RUN rm -rf $DCI_C_SRC
 
-COPY bootstrap.sh /opt/bootstrap.sh
-RUN chmod 755 /opt/bootstrap.sh
+COPY docker-entrypoint.sh /opt/docker-entrypoint.sh
+RUN chmod 755 /opt/docker-entrypoint.sh
 
 # run cmd
-ENTRYPOINT ["/opt/bootstrap.sh"]
+WORKDIR /opt
+ENTRYPOINT ["/bin/bash", "docker-entrypoint.sh"]
+
+EXPOSE 6699
+
 CMD ["/usr/local/bin/dci-controller-api"]

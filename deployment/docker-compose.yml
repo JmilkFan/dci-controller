@@ -12,6 +12,6 @@ services:
             - type: bind
               source: /var/log/dci-controller/
               target: /var/log/dci-controller/
-        command: --config-file /etc/dci-controller/dci-controller.conf
         ports:
             - "6699:6699"
+        restart: always

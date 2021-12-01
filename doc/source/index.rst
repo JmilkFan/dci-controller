@@ -15,6 +15,7 @@ Overview
     :maxdepth: 1
 
     install/install-from-source
+    install/install-from-container
     install/config
     install/deploy-via-wsgi.rst
     api-ref/v1/apis
