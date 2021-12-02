@@ -144,6 +144,12 @@ class Client(object):
 
     def get_virtual_network_vni(self, vn_uuid):
         vn_o = self.get_virtual_network_obj(vn_uuid)
+        # NOTE(fanguiju): In different modes, TF will use different VNI !!
+        #
+        #   if VxLAN Identifier Mode == User Configured:
+        #       vni = VirtualNetworkObject.virtual_network_properties.vxlan_network_identifier
+        #   else VxLAN Identifier Mode == Auto Configured:
+        #       vni = VirtualNetworkObject.virtual_network_network_id
         vni = vn_o.virtual_network_network_id
         return vni
 
