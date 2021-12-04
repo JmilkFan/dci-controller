@@ -22,8 +22,10 @@ class L3EVPNDCI(base.DCIObject, object_base.VersionedObjectDictCompat):
         'name': object_fields.StringField(nullable=True),
         'east_site_uuid': object_fields.UUIDField(nullable=False),
         'east_site_subnet_cidr': object_fields.StringField(nullable=True),
+        'east_site_vn_uuid': object_fields.StringField(nullable=True),
         'west_site_uuid': object_fields.UUIDField(nullable=False),
         'west_site_subnet_cidr': object_fields.StringField(nullable=True),
+        'west_site_vn_uuid': object_fields.StringField(nullable=True),
         'state': object_fields.EnumField(valid_values=['active', 'inactive'],
                                          nullable=False)
     }

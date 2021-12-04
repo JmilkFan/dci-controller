@@ -86,9 +86,11 @@ class L3EVPNDCI(Base):
     name = Column(String(36), nullable=True)
     # TODO(fanguiju): Associate to sites table, and use SQL Association query.
     east_site_uuid = Column(String(36), nullable=False)
-    west_site_uuid = Column(String(36), nullable=False)
     east_site_subnet_cidr = Column(String(36), nullable=False)
+    east_site_vn_uuid = Column(String(36), nullable=True)
+    west_site_uuid = Column(String(36), nullable=True)
     west_site_subnet_cidr = Column(String(36), nullable=False)
+    west_site_vn_uuid = Column(String(36), nullable=True)
     state = Column(Enum('active', 'inactive'), nullable=False)
 
 

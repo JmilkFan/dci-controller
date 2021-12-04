@@ -41,11 +41,17 @@ class L3EVPNDCI(base.APIBase):
     east_site_subnet_cidr = wtypes.text
     """Subnet CIDR."""
 
+    east_site_vn_uuid = wtypes.text
+    """UUID of Virtual Network."""
+
     west_site_uuid = types.uuid
     """The UUID of West Site Record."""
 
     west_site_subnet_cidr = wtypes.text
     """Subnet CIDR."""
+
+    west_site_vn_uuid = wtypes.text
+    """UUID of Virtual Network."""
 
     state = wtypes.text
     """State of L3 EVPN DCI."""
@@ -126,7 +132,7 @@ class L3EVPNDCIController(base.DCIController):
                                           username=site.tf_username,
                                           password=site.tf_password,
                                           project=site.os_project_name)
-            tf_client.create_virtal_network_with_user_defined_subnet(
+            vn_uuid = tf_client.create_virtal_network_with_user_defined_subnet(
                 vn_name, subnet_cidr)
         except Exception as err:
             LOG.error(_LE("Failed to create virtual network [%(name)s], "
@@ -150,6 +156,7 @@ class L3EVPNDCIController(base.DCIController):
             tf_client.retry_to_delete_virtual_network(vn_name)
 
             raise err
+        return vn_uuid
 
     def _soft_delete_l3evpn_dci_in_site(self, site, vn_name, subnet_cidr):
 
@@ -190,8 +197,8 @@ class L3EVPNDCIController(base.DCIController):
 
         # East Site
         try:
-            self._create_l3evpn_dci_in_site(east_site, vn_name,
-                                            east_site_subnet_cidr)
+            east_site_vn_uuid = self._create_l3evpn_dci_in_site(
+                east_site, vn_name, east_site_subnet_cidr)
         except Exception as err:
             LOG.error(_LE("Failed to create L3 EVPN DCI for east site, "
                           "details %s"), err)
@@ -199,8 +206,8 @@ class L3EVPNDCIController(base.DCIController):
 
         # West Site
         try:
-            self._create_l3evpn_dci_in_site(west_site, vn_name,
-                                            west_site_subnet_cidr)
+            west_site_vn_uuid = self._create_l3evpn_dci_in_site(
+                west_site, vn_name, west_site_subnet_cidr)
         except Exception as err:
             LOG.error(_LE("Failed to create L3 EVPN DCI for west site, "
                           "details %s"), err)
@@ -210,6 +217,8 @@ class L3EVPNDCIController(base.DCIController):
                                                  east_site_subnet_cidr)
             raise err
 
+        req_body['east_site_vn_uuid'] = east_site_vn_uuid
+        req_body['west_site_vn_uuid'] = west_site_vn_uuid
         req_body['state'] = 'active'
         obj_l3evpn_dci = objects.L3EVPNDCI(context, **req_body)
         obj_l3evpn_dci.create(context)
