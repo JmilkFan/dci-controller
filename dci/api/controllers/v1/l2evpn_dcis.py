@@ -132,7 +132,7 @@ class L2EVPNDCIController(base.DCIController):
                                           port=site.tf_api_server_port,
                                           username=site.tf_username,
                                           password=site.tf_password,
-                                          project=site.tf_project)
+                                          project=site.os_project_name)
             vn_uuid = tf_client.create_virtal_network_with_user_defined_subnet(
                 vn_name, subnet_cidr, subnet_allocation_pool, vn_route_target)
         except Exception as err:
@@ -171,7 +171,7 @@ class L2EVPNDCIController(base.DCIController):
                                       port=site.tf_api_server_port,
                                       username=site.tf_username,
                                       password=site.tf_password,
-                                      project=site.tf_project)
+                                      project=site.os_project_name)
         vn_o = tf_client.get_virtual_network_obj_by_name(vn_name)
         vn_vni = vn_o.virtual_network_network_id
         tf_client.retry_to_delete_virtual_network(vn_name)

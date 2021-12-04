@@ -66,7 +66,14 @@ class Site(Base):
     tf_api_server_port = Column(Integer, nullable=True)
     tf_username = Column(String(36), nullable=False)
     tf_password = Column(String(36), nullable=False)
-    tf_project = Column(String(36), nullable=True)
+    # TODO(fanguiju): Implement openstackclient and check the account infos.
+    os_auth_url = Column(String(36), nullable=False)
+    os_region = Column(String(36), nullable=False)
+    os_project_domain_name = Column(String(36), nullable=False)
+    os_user_domain_name = Column(String(36), nullable=False)
+    os_project_name = Column(String(36), nullable=False)
+    os_username = Column(String(36), nullable=False)
+    os_password = Column(String(36), nullable=False)
     state = Column(Enum('active', 'inactive'), nullable=False)
 
 

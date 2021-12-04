@@ -59,8 +59,26 @@ class Site(base.APIBase):
     tf_password = wtypes.text
     """The Tungsten Fabric password."""
 
-    tf_project = wtypes.text
-    """The Tungsten Fabric Project."""
+    os_auth_url = wtypes.text
+    """The Keystone Auth URL of OpenStack."""
+
+    os_region = wtypes.text
+    """The Region of OpenStack."""
+
+    os_project_domain_name = wtypes.text
+    """The Project Domain Name of OpenStack."""
+
+    os_user_domain_name = wtypes.text
+    """The User Domain Name of OpenStack."""
+
+    os_project_name = wtypes.text
+    """The Project of OpenStack."""
+
+    os_username = wtypes.text
+    """The Username of OpenStack."""
+
+    os_password = wtypes.text
+    """The Password of OpenStack."""
 
     state = wtypes.text
     """State of DCI Site."""
@@ -110,7 +128,7 @@ class SiteController(base.DCIController):
                               site['tf_api_server_port'],
                               site['tf_username'],
                               site['tf_password'],
-                              site['tf_project'])
+                              site['os_project_name'])
         except Exception as err:
             # TODO(fanguiju): API response exception details and failure codes.
             LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
@@ -160,7 +178,8 @@ class SiteController(base.DCIController):
         LOG.info(_LI("[sites: port] Request body = %s"), req_body)
         context = pecan.request.context
 
-        req_body['tf_project'] = req_body.get('tf_project', TF_DEFAULT_PROJECT)
+        req_body['os_project_name'] = req_body.get('os_project_name',
+                                                   TF_DEFAULT_PROJECT)
         req_body['tf_api_server_port'] = req_body.get('tf_api_server_port',
                                                       TF_DEFAULT_PORT)
         req_body['netconf_port'] = req_body.get('netconf_port',

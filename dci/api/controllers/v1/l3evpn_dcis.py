@@ -125,7 +125,7 @@ class L3EVPNDCIController(base.DCIController):
                                           port=site.tf_api_server_port,
                                           username=site.tf_username,
                                           password=site.tf_password,
-                                          project=site.tf_project)
+                                          project=site.os_project_name)
             tf_client.create_virtal_network_with_user_defined_subnet(
                 vn_name, subnet_cidr)
         except Exception as err:
@@ -157,7 +157,7 @@ class L3EVPNDCIController(base.DCIController):
                                       port=site.tf_api_server_port,
                                       username=site.tf_username,
                                       password=site.tf_password,
-                                      project=site.tf_project)
+                                      project=site.os_project_name)
         tf_client.retry_to_delete_virtual_network(vn_name)
 
         mx_client = mx_api.Client(host=site.netconf_host,
