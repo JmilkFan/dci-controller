@@ -54,6 +54,12 @@ class L2EVPNDCI(base.APIBase):
     west_site_subnet_allocation_pool = wtypes.text
     """Subnet allocation IP address pool."""
 
+    east_site_vn_uuid = wtypes.text
+    """UUID of Virtual Network."""
+
+    west_site_vn_uuid = wtypes.text
+    """UUID of Virtual Network."""
+
     state = wtypes.text
     """State of L2 EVPN DCI."""
 
@@ -163,6 +169,8 @@ class L2EVPNDCIController(base.DCIController):
             tf_client.retry_to_delete_virtual_network(vn_name)
             raise err
 
+        return vn_uuid
+
     def _soft_delete_l2evpn_dci_in_site(self, site, vn_name, subnet_cidr,
                                         subnet_allocation_pool,
                                         vn_route_target,
@@ -251,10 +259,10 @@ class L2EVPNDCIController(base.DCIController):
 
         # East Site
         try:
-            self._create_l2evpn_dci_in_site(east_site, vn_name, subnet_cidr,
-                                            east_site_subnet_allocation_pool,
-                                            vn_route_target,
-                                            inter_vlan_id, dci_vni)
+            east_site_vn_uuid = self._create_l2evpn_dci_in_site(
+                east_site, vn_name, subnet_cidr,
+                east_site_subnet_allocation_pool,
+                vn_route_target, inter_vlan_id, dci_vni)
         except Exception as err:
             LOG.error(_LE("Failed to create L2 EVPN DCI for east site, "
                           "details %s"), err)
@@ -262,10 +270,10 @@ class L2EVPNDCIController(base.DCIController):
 
         # West Site
         try:
-            self._create_l2evpn_dci_in_site(west_site, vn_name, subnet_cidr,
-                                            west_site_subnet_allocation_pool,
-                                            vn_route_target,
-                                            inter_vlan_id, dci_vni)
+            west_site_vn_uuid = self._create_l2evpn_dci_in_site(
+                west_site, vn_name, subnet_cidr,
+                west_site_subnet_allocation_pool,
+                vn_route_target, inter_vlan_id, dci_vni)
         except Exception as err:
             LOG.error(_LE("Failed to create L2 EVPN DCI for west site, "
                           "details %s"), err)
@@ -282,6 +290,9 @@ class L2EVPNDCIController(base.DCIController):
         req_body['inter_vlan_id'] = inter_vlan_id
         req_body['dci_vni'] = dci_vni
         req_body['vn_route_target'] = vn_route_target
+        req_body['east_site_vn_uuid'] = east_site_vn_uuid
+        req_body['west_site_vn_uuid'] = west_site_vn_uuid
+
         obj_l2evpn_dci = objects.L2EVPNDCI(context, **req_body)
         obj_l2evpn_dci.create(context)
 

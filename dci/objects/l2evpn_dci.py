@@ -28,6 +28,8 @@ class L2EVPNDCI(base.DCIObject, object_base.VersionedObjectDictCompat):
         'vn_route_target': object_fields.StringField(nullable=False),
         'inter_vlan_id': object_fields.IntegerField(nullable=False),
         'dci_vni': object_fields.IntegerField(nullable=False),
+        'east_site_vn_uuid': object_fields.StringField(nullable=True),
+        'west_site_vn_uuid': object_fields.StringField(nullable=True),
         'state': object_fields.EnumField(valid_values=['active', 'inactive'],
                                          nullable=False)
     }

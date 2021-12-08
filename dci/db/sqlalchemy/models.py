@@ -67,13 +67,13 @@ class Site(Base):
     tf_username = Column(String(36), nullable=False)
     tf_password = Column(String(36), nullable=False)
     # TODO(fanguiju): Implement openstackclient and check the account infos.
-    os_auth_url = Column(String(36), nullable=False)
-    os_region = Column(String(36), nullable=False)
-    os_project_domain_name = Column(String(36), nullable=False)
-    os_user_domain_name = Column(String(36), nullable=False)
+    os_auth_url = Column(String(36), nullable=True)
+    os_region = Column(String(36), nullable=True)
+    os_project_domain_name = Column(String(36), nullable=True)
+    os_user_domain_name = Column(String(36), nullable=True)
     os_project_name = Column(String(36), nullable=False)
-    os_username = Column(String(36), nullable=False)
-    os_password = Column(String(36), nullable=False)
+    os_username = Column(String(36), nullable=True)
+    os_password = Column(String(36), nullable=True)
     state = Column(Enum('active', 'inactive'), nullable=False)
 
 
@@ -109,4 +109,6 @@ class L2EVPNDCI(Base):
     vn_route_target = Column(String(36), nullable=False)
     inter_vlan_id = Column(Integer, nullable=False)
     dci_vni = Column(Integer, nullable=False)
+    east_site_vn_uuid = Column(String(36), nullable=True)
+    west_site_vn_uuid = Column(String(36), nullable=True)
     state = Column(Enum('active', 'inactive'), nullable=False)
