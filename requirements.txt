@@ -19,3 +19,4 @@ alembic>=0.8.10
 SQLAlchemy>=0.9.9
 oslo.db>=4.1.0
 oslo.versionedobjects>=1.31.2
+netmiko==3.4.0

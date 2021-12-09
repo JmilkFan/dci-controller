@@ -1,6 +1,7 @@
 from oslo_log import log as logging
 from oslo_versionedobjects import base as object_base
 
+from dci.common import constants
 from dci.db import api as dbapi
 from dci.objects import base
 from dci.objects import fields as object_fields
@@ -30,7 +31,8 @@ class L2EVPNDCI(base.DCIObject, object_base.VersionedObjectDictCompat):
         'dci_vni': object_fields.IntegerField(nullable=False),
         'east_site_vn_uuid': object_fields.StringField(nullable=True),
         'west_site_vn_uuid': object_fields.StringField(nullable=True),
-        'state': object_fields.EnumField(valid_values=['active', 'inactive'],
+        'state': object_fields.EnumField(valid_values=[constants.ACTIVE,
+                                                       constants.INACTIVE],
                                          nullable=False)
     }
 

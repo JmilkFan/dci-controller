@@ -147,7 +147,8 @@ class Client(object):
         # NOTE(fanguiju): In different modes, TF will use different VNI !!
         #
         #   if VxLAN Identifier Mode == User Configured:
-        #       vni = VirtualNetworkObject.virtual_network_properties.vxlan_network_identifier
+        #       vni = VirtualNetworkObject.virtual_network_properties.\
+        #           vxlan_network_identifier
         #   else VxLAN Identifier Mode == Auto Configured:
         #       vni = VirtualNetworkObject.virtual_network_network_id
         vni = vn_o.virtual_network_network_id

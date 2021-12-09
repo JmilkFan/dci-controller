@@ -10,6 +10,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 import urllib.parse as urlparse
 
+from dci.common import constants
 from dci.common import paths
 from dci.conf import CONF
 
@@ -74,7 +75,7 @@ class Site(Base):
     os_project_name = Column(String(36), nullable=False)
     os_username = Column(String(36), nullable=True)
     os_password = Column(String(36), nullable=True)
-    state = Column(Enum('active', 'inactive'), nullable=False)
+    state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
 
 
 class L3EVPNDCI(Base):
@@ -91,7 +92,7 @@ class L3EVPNDCI(Base):
     west_site_uuid = Column(String(36), nullable=True)
     west_site_subnet_cidr = Column(String(36), nullable=False)
     west_site_vn_uuid = Column(String(36), nullable=True)
-    state = Column(Enum('active', 'inactive'), nullable=False)
+    state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
 
 
 class L2EVPNDCI(Base):
@@ -111,4 +112,21 @@ class L2EVPNDCI(Base):
     dci_vni = Column(Integer, nullable=False)
     east_site_vn_uuid = Column(String(36), nullable=True)
     west_site_vn_uuid = Column(String(36), nullable=True)
-    state = Column(Enum('active', 'inactive'), nullable=False)
+    state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
+
+
+class WANNode(Base):
+    """"Represents the WAN Node."""
+
+    __tablename__ = 'wan_nodes'
+
+    uuid = Column(String(36), primary_key=True)
+    name = Column(String(36), nullable=True)
+    vendor = Column(Enum(constants.HUAWEI), nullable=False)
+    conn_type = Column(Enum(constants.SSHCLI, constants.NETCONF),
+                       nullable=False)
+    ssh_host = Column(String(36), nullable=False)
+    ssh_port = Column(Integer, nullable=True)
+    ssh_username = Column(String(36), nullable=False)
+    ssh_password = Column(String(36), nullable=False)
+    state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)

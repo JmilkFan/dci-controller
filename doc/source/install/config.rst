@@ -42,7 +42,7 @@ Configure dci-controller-api Service
     ..
 
 
-#.  Upgrade DB migrations  can be performed by (for backward compatibility):
+#.  Upgrade DB migrations can be performed by (for backward compatibility):
 
     .. code-block:: ini
 
@@ -51,7 +51,8 @@ Configure dci-controller-api Service
     ..
 
 
-#.  Run dci-controller-api Service (via WSGI :doc:`api-uwsgi <../install/deploy-via-wsgi>`)
+#.  Run dci-controller-api Service
+    (via WSGI :doc:`api-uwsgi <../install/deploy-via-wsgi>`)
 
     .. code-block:: bash
 

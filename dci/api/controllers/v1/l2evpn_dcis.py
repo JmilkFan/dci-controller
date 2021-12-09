@@ -10,6 +10,7 @@ from dci.api.controllers import base
 from dci.api.controllers import link
 from dci.api.controllers import types
 from dci.api import expose
+from dci.common import constants
 from dci.common import exception
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
@@ -286,7 +287,7 @@ class L2EVPNDCIController(base.DCIController):
             raise err
 
         # Step4. Update the L2 EVPN DCI state.
-        req_body['state'] = 'active'
+        req_body['state'] = constants.ACTIVE
         req_body['inter_vlan_id'] = inter_vlan_id
         req_body['dci_vni'] = dci_vni
         req_body['vn_route_target'] = vn_route_target

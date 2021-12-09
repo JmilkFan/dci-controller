@@ -9,6 +9,7 @@ from dci.api.controllers import base
 from dci.api.controllers import link
 from dci.api.controllers import types
 from dci.api import expose
+from dci.common import constants
 from dci.common import exception
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
@@ -219,7 +220,7 @@ class L3EVPNDCIController(base.DCIController):
 
         req_body['east_site_vn_uuid'] = east_site_vn_uuid
         req_body['west_site_vn_uuid'] = west_site_vn_uuid
-        req_body['state'] = 'active'
+        req_body['state'] = constants.ACTIVE
         obj_l3evpn_dci = objects.L3EVPNDCI(context, **req_body)
         obj_l3evpn_dci.create(context)
         return L3EVPNDCI.convert_with_links(obj_l3evpn_dci)

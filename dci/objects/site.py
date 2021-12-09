@@ -1,6 +1,7 @@
 from oslo_log import log as logging
 from oslo_versionedobjects import base as object_base
 
+from dci.common import constants
 from dci.db import api as dbapi
 from dci.objects import base
 from dci.objects import fields as object_fields
@@ -35,7 +36,8 @@ class Site(base.DCIObject, object_base.VersionedObjectDictCompat):
         'os_project_name': object_fields.StringField(nullable=False),
         'os_username': object_fields.StringField(nullable=True),
         'os_password': object_fields.StringField(nullable=True),
-        'state': object_fields.EnumField(valid_values=['active', 'inactive'],
+        'state': object_fields.EnumField(valid_values=[constants.ACTIVE,
+                                                       constants.INACTIVE],
                                          nullable=False)
     }
 

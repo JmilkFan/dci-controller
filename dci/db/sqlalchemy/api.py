@@ -388,3 +388,95 @@ class Connection(api.Connection):
                 raise exception.ResourceNotFound(
                     resource='L2EVPNDCI',
                     msg='with uuid=%s' % uuid)
+
+    # wan_nodes
+    def wan_node_get(self, context, uuid):
+        query = model_query(
+            context,
+            models.WANNode).filter_by(uuid=uuid)
+        try:
+            return query.one()
+        except NoResultFound:
+            raise exception.ResourceNotFound(
+                resource='WANNode',
+                msg='with uuid=%s' % uuid)
+
+    def wan_node_list_by_filters(self, context,
+                                 filters, sort_key='created_at',
+                                 sort_dir='desc', limit=None,
+                                 marker=None, join_columns=None):
+        """Return WAN node that match all filters sorted by the given keys."""
+
+        if limit == 0:
+            return []
+
+        query_prefix = model_query(context, models.WANNode)
+        filters = copy.deepcopy(filters)
+
+        exact_match_filter_names = ['state']
+
+        # Filter the query
+        query_prefix = self._exact_filter(models.WANNode, query_prefix,
+                                          filters, exact_match_filter_names)
+        if query_prefix is None:
+            return []
+        return _paginate_query(context, models.WANNode, query_prefix,
+                               limit, marker, sort_key, sort_dir)
+
+    def wan_node_list(self, context, limit=None, marker=None, sort_key=None,
+                      sort_dir=None):
+        query = model_query(context, models.WANNode)
+        return _paginate_query(context, models.WANNode, query,
+                               limit, marker, sort_key, sort_dir)
+
+    def wan_node_update(self, context, uuid, values):
+        if 'uuid' in values:
+            msg = _("Cannot overwrite UUID for an existing WAN node.")
+            raise exception.InvalidParameterValue(err=msg)
+
+        try:
+            return self._do_update_wan_node(context, uuid, values)
+        except db_exc.DBDuplicateEntry as e:
+            if 'name' in e.columns:
+                raise exception.DuplicateDeviceName(name=values['name'])
+
+    def wan_node_create(self, context, values):
+        if not values.get('uuid'):
+            values['uuid'] = uuidutils.generate_uuid()
+
+        wan_node = models.WANNode()
+        wan_node.update(values)
+
+        with _session_for_write() as session:
+            try:
+                session.add(wan_node)
+                session.flush()
+            except db_exc.DBDuplicateEntry:
+                raise exception.RecordAlreadyExists(uuid=values['uuid'])
+            return wan_node
+
+    @oslo_db_api.retry_on_deadlock
+    def _do_update_wan_node(self, context, uuid, values):
+        with _session_for_write():
+            query = model_query(context, models.WANNode)
+            query = add_identity_filter(query, uuid)
+            try:
+                ref = query.with_for_update().one()
+            except NoResultFound:
+                raise exception.ResourceNotFound(
+                    resource='WANNode',
+                    msg='with uuid=%s' % uuid)
+
+            ref.update(values)
+        return ref
+
+    @oslo_db_api.retry_on_deadlock
+    def wan_node_delete(self, context, uuid):
+        with _session_for_write():
+            query = model_query(context, models.WANNode)
+            query = add_identity_filter(query, uuid)
+            count = query.delete()
+            if count != 1:
+                raise exception.ResourceNotFound(
+                    resource='WANNode',
+                    msg='with uuid=%s' % uuid)

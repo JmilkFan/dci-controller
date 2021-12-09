@@ -9,6 +9,7 @@ from dci.api.controllers import base
 from dci.api.controllers import link
 from dci.api.controllers import types
 from dci.api import expose
+from dci.common import constants
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
 from dci.juniper import mx_api
@@ -186,7 +187,7 @@ class SiteController(base.DCIController):
                                                 NETCONF_OVER_SSH_DEFAULT_PORT)
         self._ping_check(req_body)
 
-        req_body['state'] = 'active'
+        req_body['state'] = constants.ACTIVE
         obj_site = objects.Site(context, **req_body)
         obj_site.create(context)
         return Site.convert_with_links(obj_site)
