@@ -145,3 +145,8 @@ class MXDeviceNotConnected(DCIException):
 
 class SSHCLIExecutionRrror(DCIException):
     _msg_fmt = _("SSHCLI execution error, outputs %(outputs)s.")
+
+
+class InvalidL3VPNSRv6SlicingNodeType(DCIException):
+    _msg_fmt = _("Invalid WAN node type [%(type)s] of L3VPN over SRv6 network "
+                 "slicing.")

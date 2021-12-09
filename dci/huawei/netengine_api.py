@@ -110,3 +110,13 @@ SSHCLI send config set to device [%(host)s]:
     def ping_device(self):
         cmds = ['display this']
         self.send_commands(cmds)
+
+    def setup_l3vpn_srv6_be_ingress_node(self, action, kwargs):
+        file_name = 'l3vpn_srv6_be_ingress_node.jinjia2'
+        kwargs['action'] = action
+        self.send_config_set_from_template(file_name, kwargs)
+
+    def setup_l3vpn_srv6_be_egress_node(self, action, kwargs):
+        file_name = 'l3vpn_srv6_be_egress_node.jinjia2'
+        kwargs['action'] = action
+        self.send_config_set_from_template(file_name, kwargs)

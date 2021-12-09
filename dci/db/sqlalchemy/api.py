@@ -480,3 +480,101 @@ class Connection(api.Connection):
                 raise exception.ResourceNotFound(
                     resource='WANNode',
                     msg='with uuid=%s' % uuid)
+
+    # l3vpn_srv6_slicing
+    def l3vpn_srv6_slicing_get(self, context, uuid):
+        query = model_query(
+            context,
+            models.L3VPNSRv6Slicing).filter_by(uuid=uuid)
+        try:
+            return query.one()
+        except NoResultFound:
+            raise exception.ResourceNotFound(
+                resource='L3VPNSRv6Slicing',
+                msg='with uuid=%s' % uuid)
+
+    def l3vpn_srv6_slicing_list_by_filters(self, context, filters,
+                                           sort_key='created_at',
+                                           sort_dir='desc', limit=None,
+                                           marker=None, join_columns=None):
+        """Return L3VPN over SRv6 network slicing that match all filters sorted
+        by the given keys.
+        """
+
+        if limit == 0:
+            return []
+
+        query_prefix = model_query(context, models.L3VPNSRv6Slicing)
+        filters = copy.deepcopy(filters)
+
+        exact_match_filter_names = ['state',
+                                    'east_site_uuid',
+                                    'west_site_uuid']
+
+        # Filter the query
+        query_prefix = self._exact_filter(
+            models.L3VPNSRv6Slicing, query_prefix,
+            filters, exact_match_filter_names)
+        if query_prefix is None:
+            return []
+        return _paginate_query(context, models.L3VPNSRv6Slicing, query_prefix,
+                               limit, marker, sort_key, sort_dir)
+
+    def l3vpn_srv6_slicing_list(self, context, limit=None, marker=None,
+                                sort_key=None, sort_dir=None):
+        query = model_query(context, models.L3VPNSRv6Slicing)
+        return _paginate_query(context, models.L3VPNSRv6Slicing, query,
+                               limit, marker, sort_key, sort_dir)
+
+    def l3vpn_srv6_slicing_update(self, context, uuid, values):
+        if 'uuid' in values:
+            msg = _("Cannot overwrite UUID for an existing "
+                    "L3VPN over SRv6 network slicing.")
+            raise exception.InvalidParameterValue(err=msg)
+
+        try:
+            return self._do_update_l3vpn_srv6_slicing(context, uuid, values)
+        except db_exc.DBDuplicateEntry as e:
+            if 'name' in e.columns:
+                raise exception.DuplicateDeviceName(name=values['name'])
+
+    def l3vpn_srv6_slicing_create(self, context, values):
+        if not values.get('uuid'):
+            values['uuid'] = uuidutils.generate_uuid()
+
+        l3vpn_srv6_slicing = models.L3VPNSRv6Slicing()
+        l3vpn_srv6_slicing.update(values)
+
+        with _session_for_write() as session:
+            try:
+                session.add(l3vpn_srv6_slicing)
+                session.flush()
+            except db_exc.DBDuplicateEntry:
+                raise exception.RecordAlreadyExists(uuid=values['uuid'])
+            return l3vpn_srv6_slicing
+
+    @oslo_db_api.retry_on_deadlock
+    def _do_update_l3vpn_srv6_slicing(self, context, uuid, values):
+        with _session_for_write():
+            query = model_query(context, models.L3VPNSRv6Slicing)
+            query = add_identity_filter(query, uuid)
+            try:
+                ref = query.with_for_update().one()
+            except NoResultFound:
+                raise exception.ResourceNotFound(
+                    resource='L3VPNSRv6Slicing',
+                    msg='with uuid=%s' % uuid)
+
+            ref.update(values)
+        return ref
+
+    @oslo_db_api.retry_on_deadlock
+    def l3vpn_srv6_slicing_delete(self, context, uuid):
+        with _session_for_write():
+            query = model_query(context, models.L3VPNSRv6Slicing)
+            query = add_identity_filter(query, uuid)
+            count = query.delete()
+            if count != 1:
+                raise exception.ResourceNotFound(
+                    resource='L3VPNSRv6Slicing',
+                    msg='with uuid=%s' % uuid)

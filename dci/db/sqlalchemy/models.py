@@ -116,7 +116,7 @@ class L2EVPNDCI(Base):
 
 
 class WANNode(Base):
-    """"Represents the WAN Node."""
+    """Represents the WAN Node."""
 
     __tablename__ = 'wan_nodes'
 
@@ -129,4 +129,25 @@ class WANNode(Base):
     ssh_port = Column(Integer, nullable=True)
     ssh_username = Column(String(36), nullable=False)
     ssh_password = Column(String(36), nullable=False)
+    state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
+
+
+class L3VPNSRv6Slicing(Base):
+    """Represents the L3VPN over SRv6 network slicing."""
+
+    __tablename__ = 'l3_vpn_srv6_slicings'
+
+    uuid = Column(String(36), primary_key=True)
+    name = Column(String(36), nullable=True)
+    east_site_uuid = Column(String(36), nullable=False)
+    east_site_subnet_cidr = Column(String(36), nullable=False)
+    east_site_vn_uuid = Column(String(36), nullable=True)
+    west_site_uuid = Column(String(36), nullable=False)
+    west_site_subnet_cidr = Column(String(36), nullable=False)
+    west_site_vn_uuid = Column(String(36), nullable=True)
+    routing_type = Column(Enum(constants.BEST_EFFORT,
+                               constants.TRAFFIC_ENGINEERING),
+                          nullable=False)
+    ingress_node = Column(String(36), nullable=True)
+    egress_node = Column(String(36), nullable=True)
     state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
