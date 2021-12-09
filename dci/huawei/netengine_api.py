@@ -4,7 +4,9 @@ import os
 from netmiko import ConnectHandler
 from oslo_log import log
 
+from dci.common import exception
 from dci.common.i18n import _LE
+from dci.common.i18n import _LI
 
 
 LOG = log.getLogger(__name__)
@@ -44,38 +46,67 @@ class Client(object):
 
         return jinja_env.get_template(os.path.basename(file_path))
 
-    def _parse_output(self, output):
-        """check the output of cmds.
+    def _parse_outputs(self, outputs):
+        """check the outputs from device return.
         """
-
-        if 'Error' in output:
-            return False
+        for output in outputs:
+            if 'Error' in output:
+                raise exception.SSHCLIExecutionRrror(outputs=outputs)
         else:
             return True
 
-    def executer(self, cmd):
+    def send_config_set_from_template(self, file_name, kwargs={}):
         try:
-            with ConnectHandler(**self.connection_info) as ssh_conn:
-                output = ssh_conn.send_request(cmd)
-        except Exception as err:
-            LOG.error(_LE("Failed to execute SSH CLI cmd %(cmd)s, "
-                          "details %(err)s"),
-                      {'cmd': cmd, 'err': err})
-            raise err
-
-        return self._parse_output(output)
-
-    def template_executer(self, file_name, kwargs={}):
-
-        try:
-            cmd = self._get_template_file_content(file_name).render(**kwargs)
+            cmd_str = self._get_template_file_content(
+                file_name).render(**kwargs)
         except Exception as err:
             LOG.error(_LE("Failed to get template file content of [%(file)s], "
                           "details %(err)s"),
                       {'file': file_name, 'err': err})
             raise err
-        return self.executer(cmd)
+
+        LOG.info(_LI("""
+==============================================
+SSHCLI send config set to device [%(host)s]:
+
+%(cmds)s
+==============================================
+                     """), {'host': self.connection_info['host'],
+                            'cmds': cmd_str})
+
+        cmd_list = cmd_str.split('\n')
+        try:
+            with ConnectHandler(**self.connection_info) as ssh_conn:
+                outputs = ssh_conn.send_config_set(cmd_list, delay_factor=0.2)
+                outputs += ssh_conn.save_config()
+        except Exception as err:
+            LOG.error(_LE("Failed to send config set to device %(host)s, "
+                          "details %(err)s"),
+                      {'host': self.connection_info['host'], 'err': err})
+            raise err
+
+        self._parse_outputs(outputs)
+
+    def send_commands(self, cmds=[]):
+
+        LOG.info(_LI("SSHCLI send commands to device [%(host)s]: %(cmds)s"),
+                 {'host': self.connection_info['host'], 'cmds': cmds})
+
+        try:
+            with ConnectHandler(**self.connection_info) as ssh_conn:
+                outputs = []
+                for cmd in cmds:
+                    output = ssh_conn.send_command(cmd)
+                    outputs.append(output)
+        except Exception as err:
+            LOG.error(_LE("Failed to send commands to device %(host)s, "
+                          "details %(err)s"),
+                      {'host': self.connection_info['host'], 'err': err})
+            raise err
+
+        LOG.info(_LI("SSHCLI outputs from commands %s"), outputs)
+        self._parse_outputs(outputs)
 
     def ping_device(self):
-        file_name = 'ping_device.jinja2'
-        self.template_executer(file_name)
+        cmds = ['display this']
+        self.send_commands(cmds)

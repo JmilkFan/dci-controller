@@ -141,3 +141,7 @@ class RecordAlreadyExists(DCIException):
 
 class MXDeviceNotConnected(DCIException):
     _msg_fmt = _("Not connected to MX device %(name)s.")
+
+
+class SSHCLIExecutionRrror(DCIException):
+    _msg_fmt = _("SSHCLI execution error, outputs %(outputs)s.")

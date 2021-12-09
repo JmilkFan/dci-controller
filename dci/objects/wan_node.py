@@ -11,7 +11,7 @@ LOG = logging.getLogger(__name__)
 
 
 @base.DCIObjectRegistry.register
-class Site(base.DCIObject, object_base.VersionedObjectDictCompat):
+class WANNode(base.DCIObject, object_base.VersionedObjectDictCompat):
 
     # Version 1.0: Initial version
     VERSION = '1.0'

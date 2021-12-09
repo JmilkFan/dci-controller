@@ -7,6 +7,7 @@ from dci.api.controllers import base
 from dci.api.controllers.v1 import l2evpn_dcis
 from dci.api.controllers.v1 import l3evpn_dcis
 from dci.api.controllers.v1 import sites
+from dci.api.controllers.v1 import wan_nodes
 from dci.api import expose
 
 
@@ -29,6 +30,7 @@ class Controller(rest.RestController):
     sites = sites.SiteController()
     l3evpn_dcis = l3evpn_dcis.L3EVPNDCIController()
     l2evpn_dcis = l2evpn_dcis.L2EVPNDCIController()
+    wan_nodes = wan_nodes.WANNodeController()
 
     @expose.expose(V1)
     def get(self):

@@ -51,7 +51,7 @@ class WANNode(base.APIBase):
     """The SSHCLI password."""
 
     state = wtypes.text
-    """State of DCI WANNode."""
+    """State of WANNode."""
 
     links = wsme.wsattr([link.Link], readonly=True)
     """A list containing a self link"""
@@ -95,10 +95,11 @@ class WANNodeController(base.DCIController):
 
         # Ping WAN Node SSHCLI API
         try:
-            ssh_client = netengine_api.Client(wan_node['ssh_host'],
-                                              wan_node['ssh_port'],
-                                              wan_node['ssh_username'],
-                                              wan_node['ssh_password'])
+            ssh_client = netengine_api.Client(
+                host=wan_node['ssh_host'],
+                port=wan_node['ssh_port'],
+                username=wan_node['ssh_username'],
+                password=wan_node['ssh_password'])
             ssh_client.ping_device()
         except Exception as err:
             LOG.error(_LE("Failed to PING WAN Node SSHCLI Server, "
