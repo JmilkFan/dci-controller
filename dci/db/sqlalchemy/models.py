@@ -59,12 +59,12 @@ class Site(Base):
 
     uuid = Column(String(36), primary_key=True)
     name = Column(String(36), nullable=True)
-    netconf_host = Column(String(36), nullable=False)
+    netconf_host = Column(String(36), nullable=True)
     netconf_port = Column(Integer, nullable=True)
-    netconf_username = Column(String(36), nullable=False)
-    netconf_password = Column(String(36), nullable=False)
+    netconf_username = Column(String(36), nullable=True)
+    netconf_password = Column(String(36), nullable=True)
     tf_api_server_host = Column(String(36), nullable=False)
-    tf_api_server_port = Column(Integer, nullable=True)
+    tf_api_server_port = Column(Integer, nullable=False)
     tf_username = Column(String(36), nullable=False)
     tf_password = Column(String(36), nullable=False)
     # TODO(fanguiju): Implement openstackclient and check the account infos.

@@ -232,32 +232,33 @@ class L3VPNSRv6SlicingController(base.DCIController):
         west_site_subnet_cidr = req_body['west_site_subnet_cidr']
 
         # East Site
-        try:
-            east_site_vn_uuid = self._create_l3vpn_srv6_slicing_in_site(
-                east_site, vn_name, east_site_subnet_cidr,
-                ingress_node, node_type='ingress')
-        except Exception as err:
-            LOG.error(_LE("Failed to create L3VPN over SRv6 network slicing "
-                          "for east site, details %s"), err)
-            raise err
+        #try:
+        #    east_site_vn_uuid = self._create_l3vpn_srv6_slicing_in_site(
+        #        east_site, vn_name, east_site_subnet_cidr,
+        #        ingress_node, node_type='ingress')
+        #except Exception as err:
+        #    LOG.error(_LE("Failed to create L3VPN over SRv6 network slicing "
+        #                  "for east site, details %s"), err)
+        #    raise err
 
         # West Site
-        try:
-            west_site_vn_uuid = self._create_l3vpn_srv6_slicing_in_site(
-                west_site, vn_name, west_site_subnet_cidr,
-                egress_node, node_type='egress')
-        except Exception as err:
-            LOG.error(_LE("Failed to create L3VPN over SRv6 network slicing "
-                          "for west site, details %s"), err)
+        #try:
+        #    west_site_vn_uuid = self._create_l3vpn_srv6_slicing_in_site(
+        #        west_site, vn_name, west_site_subnet_cidr,
+        #        egress_node, node_type='egress')
+        #except Exception as err:
+        #    LOG.error(_LE("Failed to create L3VPN over SRv6 network slicing "
+        #                  "for west site, details %s"), err)
 
-            LOG.info(_LI("Rollback east site..."))
-            self._soft_delete_l3vpn_srv6_slicing_in_site(
-                east_site, vn_name, east_site_subnet_cidr,
-                ingress_node, node_type='ingress')
-            raise err
+        #    LOG.info(_LI("Rollback east site..."))
+        #    self._soft_delete_l3vpn_srv6_slicing_in_site(
+        #        east_site, vn_name, east_site_subnet_cidr,
+        #        ingress_node, node_type='ingress')
+        #    raise err
 
-        req_body['east_site_vn_uuid'] = east_site_vn_uuid
-        req_body['west_site_vn_uuid'] = west_site_vn_uuid
+        #req_body['east_site_vn_uuid'] = east_site_vn_uuid
+        #req_body['west_site_vn_uuid'] = west_site_vn_uuid
+
         req_body['state'] = constants.ACTIVE
         obj_l3vpn_srv6_slicing = objects.L3VPNSRv6Slicing(context, **req_body)
         obj_l3vpn_srv6_slicing.create(context)
@@ -307,24 +308,24 @@ class L3VPNSRv6SlicingController(base.DCIController):
                           "defails %(err)s"),
                       {'name': name, 'err': err})
 
-        try:
-            self._soft_delete_l3vpn_srv6_slicing_in_site(
-                east_site, vn_name,
-                obj_l3vpn_srv6_slicing.east_site_subnet_cidr,
-                ingress_node, node_type='ingress')
-            self._soft_delete_l3vpn_srv6_slicing_in_site(
-                west_site, vn_name,
-                obj_l3vpn_srv6_slicing.west_site_subnet_cidr,
-                egress_node, node_type='egress')
-        except Exception as err:
-            LOG.error(_LE("Failed delete L3VPN over SRv6 network "
-                          "slicing[%(name)s], details %(err)s"),
-                      {'name': name, 'err': err})
+        #try:
+        #    self._soft_delete_l3vpn_srv6_slicing_in_site(
+        #        east_site, vn_name,
+        #        obj_l3vpn_srv6_slicing.east_site_subnet_cidr,
+        #        ingress_node, node_type='ingress')
+        #    self._soft_delete_l3vpn_srv6_slicing_in_site(
+        #        west_site, vn_name,
+        #        obj_l3vpn_srv6_slicing.west_site_subnet_cidr,
+        #        egress_node, node_type='egress')
+        #except Exception as err:
+        #    LOG.error(_LE("Failed delete L3VPN over SRv6 network "
+        #                  "slicing[%(name)s], details %(err)s"),
+        #              {'name': name, 'err': err})
 
-            LOG.info(_LI("Update L3VPN over SRv6 network slicing "
-                         "state to `inactive`."))
-            obj_l3vpn_srv6_slicing.state = 'inactve'
-            obj_l3vpn_srv6_slicing.save(context)
-            return None
+        #    LOG.info(_LI("Update L3VPN over SRv6 network slicing "
+        #                 "state to `inactive`."))
+        #    obj_l3vpn_srv6_slicing.state = 'inactve'
+        #    obj_l3vpn_srv6_slicing.save(context)
+        #    return None
 
         obj_l3vpn_srv6_slicing.destroy(context)

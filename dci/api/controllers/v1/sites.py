@@ -123,30 +123,34 @@ class SiteController(base.DCIController):
     """
 
     def _ping_check(self, site):
+
         # Ping TF VNC API
-        try:
-            tf_vnc_api.Client(site['tf_api_server_host'],
-                              site['tf_api_server_port'],
-                              site['tf_username'],
-                              site['tf_password'],
-                              site['os_project_name'])
-        except Exception as err:
-            # TODO(fanguiju): API response exception details and failure codes.
-            LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
-                          "site login informations %s."), site)
-            raise err
+        if site.get('tf_api_server_host'):
+            try:
+                tf_vnc_api.Client(site['tf_api_server_host'],
+                                  site['tf_api_server_port'],
+                                  site['tf_username'],
+                                  site['tf_password'],
+                                  site['os_project_name'])
+            except Exception as err:
+                # TODO(fanguiju): API response exception details and failure
+                # codes.
+                LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
+                              "site login informations %s."), site)
+                raise err
 
         # Ping MX NETCONF API
-        try:
-            mx_client = mx_api.Client(site['netconf_host'],
-                                      site['netconf_port'],
-                                      site['netconf_username'],
-                                      site['netconf_password'])
-            mx_client.ping()
-        except Exception as err:
-            LOG.error(_LE("Failed to PING MX NETCONF Server, "
-                          "site login informations %s."), site)
-            raise err
+        if site.get('netconf_host'):
+            try:
+                mx_client = mx_api.Client(site['netconf_host'],
+                                          site['netconf_port'],
+                                          site['netconf_username'],
+                                          site['netconf_password'])
+                mx_client.ping()
+            except Exception as err:
+                LOG.error(_LE("Failed to PING MX NETCONF Server, "
+                              "site login informations %s."), site)
+                raise err
 
     @expose.expose(Site, wtypes.text)
     def get_one(self, uuid):
