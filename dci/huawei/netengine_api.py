@@ -1,7 +1,11 @@
 import jinja2
 import os
 
-from netmiko import ConnectHandler
+from netmiko import (
+    ConnectHandler,
+    NetmikoTimeoutException,
+    NetmikoAuthenticationException,
+)
 from oslo_log import log
 
 from dci.common import exception
@@ -25,7 +29,7 @@ class Client(object):
             'username': username,
             'password': password,
             'port': port,
-            'secret': secret,
+            'secret': secret,  # enable password
             'use_keys': use_keys,
             'key_file': key_file
         }
@@ -77,8 +81,18 @@ SSHCLI send config set to device [%(host)s]:
         cmd_list = cmd_str.split('\n')
         try:
             with ConnectHandler(**self.connection_info) as ssh_conn:
+                ssh_conn.enable()
+
                 outputs = ssh_conn.send_config_set(cmd_list, delay_factor=0.2)
                 outputs += ssh_conn.save_config()
+        except NetmikoTimeoutException as err:
+            LOG.error(_LE("Failed to send commands to device %s, "
+                          "connect time out..."), self.connection_info['host'])
+            raise err
+        except NetmikoAuthenticationException as err:
+            LOG.error(_LE("Failed to send commands to device %s, "
+                          "authentication failed."))
+            raise err
         except Exception as err:
             LOG.error(_LE("Failed to send config set to device %(host)s, "
                           "details %(err)s"),
@@ -94,10 +108,20 @@ SSHCLI send config set to device [%(host)s]:
 
         try:
             with ConnectHandler(**self.connection_info) as ssh_conn:
-                outputs = []
+                ssh_conn.enable()
+
+                outputs = {}
                 for cmd in cmds:
-                    output = ssh_conn.send_command(cmd)
-                    outputs.append(output)
+                    outputs[cmd] = ssh_conn.send_command(cmd)
+
+        except NetmikoTimeoutException as err:
+            LOG.error(_LE("Failed to send commands to device %s, "
+                          "connect time out..."), self.connection_info['host'])
+            raise err
+        except NetmikoAuthenticationException as err:
+            LOG.error(_LE("Failed to send commands to device %s, "
+                          "authentication failed."))
+            raise err
         except Exception as err:
             LOG.error(_LE("Failed to send commands to device %(host)s, "
                           "details %(err)s"),
@@ -111,12 +135,7 @@ SSHCLI send config set to device [%(host)s]:
         cmds = ['display this']
         self.send_commands(cmds)
 
-    def setup_l3vpn_srv6_be_ingress_node(self, action, kwargs):
-        file_name = 'l3vpn_srv6_be_ingress_node.jinjia2'
-        kwargs['action'] = action
-        self.send_config_set_from_template(file_name, kwargs)
-
-    def setup_l3vpn_srv6_be_egress_node(self, action, kwargs):
-        file_name = 'l3vpn_srv6_be_egress_node.jinjia2'
+    def setup_node_for_l3vpn_srv6_be_slicing(self, action, kwargs):
+        file_name = 'setup_node_for_l3vpn_srv6_be_slicing.jinjia2'
         kwargs['action'] = action
         self.send_config_set_from_template(file_name, kwargs)

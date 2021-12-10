@@ -23,13 +23,15 @@ class WANNode(base.DCIObject, object_base.VersionedObjectDictCompat):
         'name': object_fields.StringField(nullable=True),
         'vendor': object_fields.EnumField(
             valid_values=[constants.HUAWEI], nullable=False),
-        'conn_type': object_fields.EnumField(
+        'configure_mode': object_fields.EnumField(
             valid_values=[constants.SSHCLI, constants.NETCONF],
             nullable=False),
         'ssh_host': object_fields.StringField(nullable=False),
-        'ssh_port': object_fields.IntegerField(nullable=True),
+        'ssh_port': object_fields.IntegerField(nullable=False),
         'ssh_username': object_fields.StringField(nullable=False),
         'ssh_password': object_fields.StringField(nullable=False),
+        'privilege_password': object_fields.StringField(nullable=False),
+        'as_number': object_fields.IntegerField(nullable=True),
         'state': object_fields.EnumField(
             valid_values=[constants.ACTIVE, constants.INACTIVE],
             nullable=False)

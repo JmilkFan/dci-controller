@@ -35,8 +35,8 @@ class WANNode(base.APIBase):
     vendor = wtypes.text
     """Network Device Vendor."""
 
-    conn_type = wtypes.text
-    """Type of connect to device."""
+    configure_mode = wtypes.text
+    """Deivce Configuration mode."""
 
     ssh_host = wtypes.IPv4AddressType()
     """The SSHCLI host IP address."""
@@ -49,6 +49,12 @@ class WANNode(base.APIBase):
 
     ssh_password = wtypes.text
     """The SSHCLI password."""
+
+    privilege_password = wtypes.text
+    """The Device Privileged mode password."""
+
+    as_number = wtypes.IntegerType()
+    """AS Number."""
 
     state = wtypes.text
     """State of WANNode."""
@@ -99,7 +105,8 @@ class WANNodeController(base.DCIController):
                 host=wan_node['ssh_host'],
                 port=wan_node['ssh_port'],
                 username=wan_node['ssh_username'],
-                password=wan_node['ssh_password'])
+                password=wan_node['ssh_password'],
+                secret=wan_node['privilege_password'])
             ssh_client.ping_device()
         except Exception as err:
             LOG.error(_LE("Failed to PING WAN Node SSHCLI Server, "
@@ -138,11 +145,17 @@ class WANNodeController(base.DCIController):
         LOG.info(_LI("[wan_nodes: port] Request body = %s"), req_body)
         context = pecan.request.context
 
+        # Setup default privilege mode password.
+        if not req_body.get('privilege_password'):
+            req_body['privilege_password'] = ''
+
         self._ping_check(req_body)
 
+        # NOTE(fanguiju): Just only support HUAWEI SSHCLI now.
         req_body['vendor'] = constants.HUAWEI
-        req_body['conn_type'] = constants.SSHCLI
+        req_body['configure_mode'] = constants.SSHCLI
         req_body['state'] = constants.ACTIVE
+
         obj_wan_node = objects.WANNode(context, **req_body)
         obj_wan_node.create(context)
         return WANNode.convert_with_links(obj_wan_node)

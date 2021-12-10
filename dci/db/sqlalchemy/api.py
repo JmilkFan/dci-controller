@@ -413,7 +413,8 @@ class Connection(api.Connection):
         query_prefix = model_query(context, models.WANNode)
         filters = copy.deepcopy(filters)
 
-        exact_match_filter_names = ['state']
+        exact_match_filter_names = ['state',
+                                    'as_number']
 
         # Filter the query
         query_prefix = self._exact_filter(models.WANNode, query_prefix,

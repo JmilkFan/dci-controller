@@ -6,6 +6,7 @@ from oslo_utils import timeutils
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Boolean
 from sqlalchemy import Integer
 from sqlalchemy import String
 import urllib.parse as urlparse
@@ -123,12 +124,14 @@ class WANNode(Base):
     uuid = Column(String(36), primary_key=True)
     name = Column(String(36), nullable=True)
     vendor = Column(Enum(constants.HUAWEI), nullable=False)
-    conn_type = Column(Enum(constants.SSHCLI, constants.NETCONF),
-                       nullable=False)
+    configure_mode = Column(Enum(constants.SSHCLI, constants.NETCONF),
+                            nullable=False)
     ssh_host = Column(String(36), nullable=False)
-    ssh_port = Column(Integer, nullable=True)
+    ssh_port = Column(Integer, nullable=False)
     ssh_username = Column(String(36), nullable=False)
     ssh_password = Column(String(36), nullable=False)
+    privilege_password = Column(String(36), nullable=True)
+    as_number = Column(Integer, nullable=True)
     state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
 
 
@@ -150,4 +153,6 @@ class L3VPNSRv6Slicing(Base):
                           nullable=False)
     ingress_node = Column(String(36), nullable=True)
     egress_node = Column(String(36), nullable=True)
+    route_target = Column(String(36), nullable=True)
+    is_keepalive = Column(Boolean, nullable=True)
     state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)

@@ -1,0 +1,14 @@
+{% if {{ action }} == 'create' %}
+ip vpn-instance {{ vpn_name }}
+  ipv4-family
+    route-distinguisher {{ rd }}
+    vpn-target {{ rt }} export-extcommunity
+    vpn-target {{ rt }} import-extcommunity
+
+ipv4-family vpn-instance {{ vpn_name }}
+  segment-routing ipv6 locator as1 auto-sid-disable
+  segment-routing ipv6 best-effort
+
+{% elif {{ action }} == 'delete' %}
+
+{% endif %}

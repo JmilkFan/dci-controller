@@ -33,6 +33,8 @@ class L3VPNSRv6Slicing(base.DCIObject, object_base.VersionedObjectDictCompat):
             nullable=False),
         'ingress_node': object_fields.StringField(nullable=True),
         'egress_node': object_fields.StringField(nullable=True),
+        'route_target': object_fields.StringField(nullable=True),
+        'is_keepalive': object_fields.BooleanField(nullable=True),
         'state': object_fields.EnumField(
             valid_values=[constants.ACTIVE,
                           constants.INACTIVE],

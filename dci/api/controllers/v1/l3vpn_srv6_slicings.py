@@ -60,6 +60,12 @@ class L3VPNSRv6Slicing(base.APIBase):
     state = wtypes.text
     """State of L3VPN over SRv6 network slicing."""
 
+    route_target = wtypes.text
+    """Route Target of MP-BGP."""
+
+    is_keepalive = bool
+    """SRv6 VPN whether keep alive."""
+
     links = wsme.wsattr([link.Link], readonly=True)
     """A list containing a self link"""
 
@@ -132,8 +138,10 @@ class L3VPNSRv6SlicingController(base.DCIController):
             context, filters=filters_dict)
         return L3VPNSRv6SlicingCollection.convert_with_links(obj_l3vpn_srv6_slicings)  # noqa
 
-    def _create_l3vpn_srv6_slicing_in_site(self, site, vn_name,
-                                           subnet_cidr, wan_node, node_type):
+    def _create_l3vpn_srv6_slicing_be_in_site(self, site, vn_name,
+                                              subnet_cidr, wan_node,
+                                              route_target,
+                                              route_distinguisher):
 
         # Create Tungstun Fabric Virtual Network.
         try:
@@ -151,18 +159,20 @@ class L3VPNSRv6SlicingController(base.DCIController):
             raise err
 
         # Edit L3VPN over SRv6 network slicing WAN node.
+        kwargs = {
+            'vpn_name': vn_name,
+            'rd': route_distinguisher,
+            'rt': route_target
+        }
         try:
             ne_client = netengine_api.Client(
                 host=wan_node.ssh_host,
                 port=wan_node.ssh_port,
                 username=wan_node.ssh_username,
-                password=wan_node.ssh_password)
-            if node_type == 'ingress':
-                ne_client.setup_l3vpn_srv6_be_ingress_node(action='create')
-            elif node_type == 'egress':
-                ne_client.setup_l3vpn_srv6_be_egress_node(action='create')
-            else:
-                raise exception.InvalidL3VPNSRv6SlicingNodeType(type=node_type)
+                password=wan_node.ssh_password,
+                secret=wan_node.privilege_password)
+            ne_client.setup_node_for_l3vpn_srv6_be_slicing(action='create',
+                                                           kwargs=kwargs)
         except Exception as err:
             LOG.error(_LE("Failed to edit L3VPN over SRv6 network slicing WAN "
                           "node [%(host)s], details %(err)s"),
@@ -174,9 +184,8 @@ class L3VPNSRv6SlicingController(base.DCIController):
 
         return vn_uuid
 
-    def _soft_delete_l3vpn_srv6_slicing_in_site(self, site, vn_name,
-                                                subnet_cidr, wan_node,
-                                                node_type):
+    def _soft_delete_l3vpn_srv6_be_slicing_in_site(self, site, vn_name,
+                                                   subnet_cidr, wan_node):
 
         tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
                                       port=site.tf_api_server_port,
@@ -189,13 +198,10 @@ class L3VPNSRv6SlicingController(base.DCIController):
             host=wan_node.ssh_host,
             port=site.ssh_port,
             username=site.ssh_username,
-            password=site.ssh_password)
-        if node_type == 'ingress':
-            ne_client.setup_l3vpn_srv6_be_ingress_node(action='delete')
-        elif node_type == 'egress':
-            ne_client.setup_l3vpn_srv6_be_egress_node(action='delete')
-        else:
-            raise exception.InvalidL3VPNSRv6SlicingNodeType(type=node_type)
+            password=site.ssh_password,
+            secret=wan_node.privilege_password)
+        ne_client.setup_node_for_l3vpn_srv6_be_slicing(wan_node,
+                                                       action='delete')
 
     @expose.expose(L3VPNSRv6Slicing, body=types.jsontype,
                    status_code=HTTPStatus.CREATED)
@@ -205,6 +211,17 @@ class L3VPNSRv6SlicingController(base.DCIController):
         LOG.info(_LI("[l3vpn_srv6_slicings: port] Request body = %s"),
                  req_body)
         context = pecan.request.context
+
+        # Check request body for SRv6 VPN BE mode.
+        if req_body['routing_type'] == constants.BEST_EFFORT:
+            if not req_body.get('ingress_node') \
+                    or not req_body.get('egress_node') \
+                    or not req_body.get('route_target'):
+                raise exception.InvalidAPIRequest(
+                    "Invalid request body for create L3VPN SRv6 BE Slicing, "
+                    "details %s", req_body)
+        elif req_body['routing_type'] == constants.TRAFFIC_ENGINEERING:
+            raise NotImplementedError("Not Implemented TE mode.")
 
         name = req_body['name']
         vn_name = VN_NAME_PREFIX + name
@@ -230,34 +247,40 @@ class L3VPNSRv6SlicingController(base.DCIController):
 
         east_site_subnet_cidr = req_body['east_site_subnet_cidr']
         west_site_subnet_cidr = req_body['west_site_subnet_cidr']
+        route_target = req_body['route_target']
+        # TODO(fanguiju): Assign a globally unique RD.
+        route_distinguisher = "200:2"
 
-        # East Site
-        #try:
-        #    east_site_vn_uuid = self._create_l3vpn_srv6_slicing_in_site(
-        #        east_site, vn_name, east_site_subnet_cidr,
-        #        ingress_node, node_type='ingress')
-        #except Exception as err:
-        #    LOG.error(_LE("Failed to create L3VPN over SRv6 network slicing "
-        #                  "for east site, details %s"), err)
-        #    raise err
+        if req_body['routing_type'] == constants.BEST_EFFORT:
+            # East Site
+            try:
+                east_site_vn_uuid = self._create_l3vpn_srv6_slicing_be_in_site(
+                    east_site, vn_name, east_site_subnet_cidr,
+                    ingress_node, route_target, route_distinguisher)
+            except Exception as err:
+                LOG.error(_LE("Failed to create L3VPN over SRv6 network "
+                              "slicing for east site, details %s"), err)
+                raise err
 
-        # West Site
-        #try:
-        #    west_site_vn_uuid = self._create_l3vpn_srv6_slicing_in_site(
-        #        west_site, vn_name, west_site_subnet_cidr,
-        #        egress_node, node_type='egress')
-        #except Exception as err:
-        #    LOG.error(_LE("Failed to create L3VPN over SRv6 network slicing "
-        #                  "for west site, details %s"), err)
+            # West Site
+            try:
+                west_site_vn_uuid = self._create_l3vpn_srv6_slicing_be_in_site(
+                    west_site, vn_name, west_site_subnet_cidr,
+                    egress_node, route_target, route_distinguisher)
+            except Exception as err:
+                LOG.error(_LE("Failed to create L3VPN over SRv6 network "
+                              "slicing for west site, details %s"), err)
 
-        #    LOG.info(_LI("Rollback east site..."))
-        #    self._soft_delete_l3vpn_srv6_slicing_in_site(
-        #        east_site, vn_name, east_site_subnet_cidr,
-        #        ingress_node, node_type='ingress')
-        #    raise err
+                LOG.info(_LI("Rollback east site..."))
+                self._soft_delete_l3vpn_srv6_be_slicing_in_site(
+                    east_site, vn_name, east_site_subnet_cidr,
+                    ingress_node, node_type='ingress')
+                raise err
+        elif req_body['routing_type'] == constants.TRAFFIC_ENGINEERING:
+            raise NotImplementedError("Not Implemented TE mode.")
 
-        #req_body['east_site_vn_uuid'] = east_site_vn_uuid
-        #req_body['west_site_vn_uuid'] = west_site_vn_uuid
+        req_body['east_site_vn_uuid'] = east_site_vn_uuid
+        req_body['west_site_vn_uuid'] = west_site_vn_uuid
 
         req_body['state'] = constants.ACTIVE
         obj_l3vpn_srv6_slicing = objects.L3VPNSRv6Slicing(context, **req_body)
@@ -308,24 +331,27 @@ class L3VPNSRv6SlicingController(base.DCIController):
                           "defails %(err)s"),
                       {'name': name, 'err': err})
 
-        #try:
-        #    self._soft_delete_l3vpn_srv6_slicing_in_site(
-        #        east_site, vn_name,
-        #        obj_l3vpn_srv6_slicing.east_site_subnet_cidr,
-        #        ingress_node, node_type='ingress')
-        #    self._soft_delete_l3vpn_srv6_slicing_in_site(
-        #        west_site, vn_name,
-        #        obj_l3vpn_srv6_slicing.west_site_subnet_cidr,
-        #        egress_node, node_type='egress')
-        #except Exception as err:
-        #    LOG.error(_LE("Failed delete L3VPN over SRv6 network "
-        #                  "slicing[%(name)s], details %(err)s"),
-        #              {'name': name, 'err': err})
+        if obj_l3vpn_srv6_slicing.routing_type == constants.BEST_EFFORT:
+            try:
+                self._soft_delete_l3vpn_srv6_be_slicing_in_site(
+                    east_site, vn_name,
+                    obj_l3vpn_srv6_slicing.east_site_subnet_cidr,
+                    ingress_node, node_type='ingress')
+                self._soft_delete_l3vpn_srv6_be_slicing_in_site(
+                    west_site, vn_name,
+                    obj_l3vpn_srv6_slicing.west_site_subnet_cidr,
+                    egress_node, node_type='egress')
+            except Exception as err:
+                LOG.error(_LE("Failed delete L3VPN over SRv6 network "
+                              "slicing[%(name)s], details %(err)s"),
+                          {'name': name, 'err': err})
 
-        #    LOG.info(_LI("Update L3VPN over SRv6 network slicing "
-        #                 "state to `inactive`."))
-        #    obj_l3vpn_srv6_slicing.state = 'inactve'
-        #    obj_l3vpn_srv6_slicing.save(context)
-        #    return None
+                LOG.info(_LI("Update L3VPN over SRv6 network slicing "
+                             "state to `inactive`."))
+                obj_l3vpn_srv6_slicing.state = 'inactve'
+                obj_l3vpn_srv6_slicing.save(context)
+                return None
+        elif obj_l3vpn_srv6_slicing.routing_type == constants.TRAFFIC_ENGINEERING:  # noqa
+            raise NotImplementedError("Not Implemented TE mode.")
 
         obj_l3vpn_srv6_slicing.destroy(context)
