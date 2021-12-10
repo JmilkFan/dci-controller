@@ -20,7 +20,7 @@ from dci import objects
 
 LOG = log.getLogger(__name__)
 
-VN_NAME_PREFIX = 'dci-controller-L3EVPNDCI-'
+VN_NAME_PREFIX = 'dcictl-L3EVPNDCI-'
 
 
 class L3EVPNDCI(base.APIBase):

@@ -1,5 +1,6 @@
 from http import HTTPStatus
 import pecan
+import random
 import wsme
 from wsme import types as wtypes
 
@@ -20,7 +21,7 @@ from dci import objects
 
 LOG = log.getLogger(__name__)
 
-VN_NAME_PREFIX = 'dci-controller-L3VPNSRv6Slicing-'
+VN_NAME_PREFIX = 'dcictl-L3VPNSRv6-'
 
 
 class L3VPNSRv6Slicing(base.APIBase):
@@ -144,19 +145,19 @@ class L3VPNSRv6SlicingController(base.DCIController):
                                               route_distinguisher):
 
         # Create Tungstun Fabric Virtual Network.
-        try:
-            tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
-                                          port=site.tf_api_server_port,
-                                          username=site.tf_username,
-                                          password=site.tf_password,
-                                          project=site.os_project_name)
-            vn_uuid = tf_client.create_virtal_network_with_user_defined_subnet(
-                vn_name, subnet_cidr)
-        except Exception as err:
-            LOG.error(_LE("Failed to create virtual network [%(name)s], "
-                          "details %(err)s"),
-                      {'name': vn_name, 'err': err})
-            raise err
+        #try:
+        #    tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
+        #                                  port=site.tf_api_server_port,
+        #                                  username=site.tf_username,
+        #                                  password=site.tf_password,
+        #                                  project=site.os_project_name)
+        #    vn_uuid = tf_client.create_virtal_network_with_user_defined_subnet(
+        #        vn_name, subnet_cidr)
+        #except Exception as err:
+        #    LOG.error(_LE("Failed to create virtual network [%(name)s], "
+        #                  "details %(err)s"),
+        #              {'name': vn_name, 'err': err})
+        #    raise err
 
         # Edit L3VPN over SRv6 network slicing WAN node.
         kwargs = {
@@ -174,34 +175,35 @@ class L3VPNSRv6SlicingController(base.DCIController):
             ne_client.setup_node_for_l3vpn_srv6_be_slicing(action='create',
                                                            kwargs=kwargs)
         except Exception as err:
-            LOG.error(_LE("Failed to edit L3VPN over SRv6 network slicing WAN "
+            LOG.error(_LE("Failed to setup L3VPN over SRv6 network slicing WAN "
                           "node [%(host)s], details %(err)s"),
                       {'host': wan_node.ssh_host, 'err': err})
 
             LOG.info(_LE("Rollback virtual network [%s]..."), vn_name)
-            tf_client.retry_to_delete_virtual_network(vn_name)
+            #tf_client.retry_to_delete_virtual_network(vn_name)
             raise err
 
-        return vn_uuid
+        return "b6d9ac55-4c2f-4ba4-9d2c-7104aee79eff"
+        #return vn_uuid
 
     def _soft_delete_l3vpn_srv6_be_slicing_in_site(self, site, vn_name,
                                                    subnet_cidr, wan_node):
 
-        tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
-                                      port=site.tf_api_server_port,
-                                      username=site.tf_username,
-                                      password=site.tf_password,
-                                      project=site.os_project_name)
-        tf_client.retry_to_delete_virtual_network(vn_name)
+        #tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
+        #                              port=site.tf_api_server_port,
+        #                              username=site.tf_username,
+        #                              password=site.tf_password,
+        #                              project=site.os_project_name)
+        #tf_client.retry_to_delete_virtual_network(vn_name)
 
         ne_client = netengine_api.Client(
             host=wan_node.ssh_host,
-            port=site.ssh_port,
-            username=site.ssh_username,
-            password=site.ssh_password,
+            port=wan_node.ssh_port,
+            username=wan_node.ssh_username,
+            password=wan_node.ssh_password,
             secret=wan_node.privilege_password)
-        ne_client.setup_node_for_l3vpn_srv6_be_slicing(wan_node,
-                                                       action='delete')
+        ne_client.setup_node_for_l3vpn_srv6_be_slicing(action='delete',
+                                                       kwargs={})
 
     @expose.expose(L3VPNSRv6Slicing, body=types.jsontype,
                    status_code=HTTPStatus.CREATED)
@@ -225,6 +227,13 @@ class L3VPNSRv6SlicingController(base.DCIController):
 
         name = req_body['name']
         vn_name = VN_NAME_PREFIX + name
+        if len(vn_name) >= 32:
+            err_msg = _LE("The naming length of Huawei device VPN instance "
+                          "should be less than or equal to 31, but it gets "
+                          "%(len)s [%(name)s].") % {'len': len(vn_name),
+                                                    'name': vn_name}
+            LOG.error(err_msg)
+            raise exception.L3VPNSRv6SlicingError(err=err_msg)
         try:
             east_site = objects.Site.get(context, req_body['east_site_uuid'])
             west_site = objects.Site.get(context, req_body['west_site_uuid'])
@@ -249,7 +258,7 @@ class L3VPNSRv6SlicingController(base.DCIController):
         west_site_subnet_cidr = req_body['west_site_subnet_cidr']
         route_target = req_body['route_target']
         # TODO(fanguiju): Assign a globally unique RD.
-        route_distinguisher = "200:2"
+        route_distinguisher = "100:%s" % random.randint(0, 100)
 
         if req_body['routing_type'] == constants.BEST_EFFORT:
             # East Site
@@ -274,7 +283,7 @@ class L3VPNSRv6SlicingController(base.DCIController):
                 LOG.info(_LI("Rollback east site..."))
                 self._soft_delete_l3vpn_srv6_be_slicing_in_site(
                     east_site, vn_name, east_site_subnet_cidr,
-                    ingress_node, node_type='ingress')
+                    ingress_node)
                 raise err
         elif req_body['routing_type'] == constants.TRAFFIC_ENGINEERING:
             raise NotImplementedError("Not Implemented TE mode.")
@@ -336,11 +345,11 @@ class L3VPNSRv6SlicingController(base.DCIController):
                 self._soft_delete_l3vpn_srv6_be_slicing_in_site(
                     east_site, vn_name,
                     obj_l3vpn_srv6_slicing.east_site_subnet_cidr,
-                    ingress_node, node_type='ingress')
+                    ingress_node)
                 self._soft_delete_l3vpn_srv6_be_slicing_in_site(
                     west_site, vn_name,
                     obj_l3vpn_srv6_slicing.west_site_subnet_cidr,
-                    egress_node, node_type='egress')
+                    egress_node)
             except Exception as err:
                 LOG.error(_LE("Failed delete L3VPN over SRv6 network "
                               "slicing[%(name)s], details %(err)s"),

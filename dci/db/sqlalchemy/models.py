@@ -3,10 +3,10 @@
 from oslo_db import options as db_options
 from oslo_db.sqlalchemy import models
 from oslo_utils import timeutils
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Boolean
 from sqlalchemy import Integer
 from sqlalchemy import String
 import urllib.parse as urlparse

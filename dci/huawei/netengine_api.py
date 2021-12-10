@@ -31,7 +31,8 @@ class Client(object):
             'port': port,
             'secret': secret,  # enable password
             'use_keys': use_keys,
-            'key_file': key_file
+            'key_file': key_file,
+            'session_log': '/tmp/netmiko_session_log.txt'
         }
 
     def _get_template_file_content(self, file_name):
@@ -53,11 +54,28 @@ class Client(object):
     def _parse_outputs(self, outputs):
         """check the outputs from device return.
         """
-        for output in outputs:
-            if 'Error' in output:
-                raise exception.SSHCLIExecutionRrror(outputs=outputs)
+        if isinstance(outputs, str):
+            if 'Error' in outputs:
+                raise exception.SSHCLIExecutionError()
+            else:
+                return True
+
+        elif isinstance(outputs, list):
+            for output in outputs:
+                if 'Error' in output:
+                    raise exception.SSHCLIExecutionError()
+            else:
+                return True
+
+        elif isinstance(outputs, dict):
+            for _, v in outputs.items():
+                if 'Error' in v:
+                    raise exception.SSHCLIExecutionError()
+            else:
+                return True
+
         else:
-            return True
+            pass
 
     def send_config_set_from_template(self, file_name, kwargs={}):
         try:
@@ -81,9 +99,11 @@ SSHCLI send config set to device [%(host)s]:
         cmd_list = cmd_str.split('\n')
         try:
             with ConnectHandler(**self.connection_info) as ssh_conn:
-                ssh_conn.enable()
+                if self.connection_info['secret']:
+                    ssh_conn.enable()
 
-                outputs = ssh_conn.send_config_set(cmd_list, delay_factor=0.2)
+                outputs = ssh_conn.send_config_set(cmd_list,
+                                                   delay_factor=5)
                 outputs += ssh_conn.save_config()
         except NetmikoTimeoutException as err:
             LOG.error(_LE("Failed to send commands to device %s, "
@@ -99,6 +119,14 @@ SSHCLI send config set to device [%(host)s]:
                       {'host': self.connection_info['host'], 'err': err})
             raise err
 
+        LOG.info(_LI("""
+==============================================
+Outputs:
+
+%(outputs)s
+==============================================
+                     """), {'outputs': outputs})
+
         self._parse_outputs(outputs)
 
     def send_commands(self, cmds=[]):
@@ -108,7 +136,8 @@ SSHCLI send config set to device [%(host)s]:
 
         try:
             with ConnectHandler(**self.connection_info) as ssh_conn:
-                ssh_conn.enable()
+                if self.connection_info['secret']:
+                    ssh_conn.enable()
 
                 outputs = {}
                 for cmd in cmds:

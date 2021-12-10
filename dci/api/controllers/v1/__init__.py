@@ -6,9 +6,9 @@ from wsme import types as wtypes
 from dci.api.controllers import base
 from dci.api.controllers.v1 import l2evpn_dcis
 from dci.api.controllers.v1 import l3evpn_dcis
+from dci.api.controllers.v1 import l3vpn_srv6_slicings
 from dci.api.controllers.v1 import sites
 from dci.api.controllers.v1 import wan_nodes
-from dci.api.controllers.v1 import l3vpn_srv6_slicings
 from dci.api import expose
 
 

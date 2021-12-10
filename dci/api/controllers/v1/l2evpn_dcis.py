@@ -21,7 +21,7 @@ from dci import objects
 
 LOG = log.getLogger(__name__)
 
-VN_NAME_PREFIX = 'dci-controller-L2EVPNDCI-'
+VN_NAME_PREFIX = 'dcictl-L2EVPNDCI-'
 VLAN_ID_RANGE = [1000, 2000]
 ROUTE_TARGET_RANGE = [1000, 2000]
 DCI_EVPN_TYPE2_VNI = [1000, 2000]
