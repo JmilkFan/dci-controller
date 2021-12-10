@@ -166,6 +166,7 @@ class Client(object):
         return vn_o
 
     def delete_virtual_network(self, vn_name):
+        LOG.info(_LI("delete virtual network [%s]"), vn_name)
         try:
             self.client.virtual_network_delete(
                 fq_name=[TF_DEFAULT_DOMAIN, self.project_name, vn_name])

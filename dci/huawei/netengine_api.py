@@ -1,11 +1,10 @@
 import jinja2
 import os
 
-from netmiko import (
-    ConnectHandler,
-    NetmikoTimeoutException,
-    NetmikoAuthenticationException,
-)
+from netmiko import ConnectHandler
+from netmiko import NetmikoAuthenticationException
+from netmiko import NetmikoTimeoutException
+
 from oslo_log import log
 
 from dci.common import exception
@@ -103,6 +102,8 @@ SSHCLI send config set to device [%(host)s]:
                     ssh_conn.enable()
 
                 outputs = ssh_conn.send_config_set(cmd_list,
+                                                   strip_prompt=False,
+                                                   strip_command=False,
                                                    delay_factor=5)
                 outputs += ssh_conn.save_config()
         except NetmikoTimeoutException as err:

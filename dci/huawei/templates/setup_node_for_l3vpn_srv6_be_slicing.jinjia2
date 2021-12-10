@@ -8,10 +8,25 @@ ip vpn-instance {{ vpn_name }}
 #
 bgp 38272
   ipv4-family vpn-instance {{ vpn_name }}
-    segment-routing ipv6 locator as1 auto-sid-disable
+    {# `srh.pe` is the Locator ID, needs to be preset. #}
+    segment-routing ipv6 locator srh.pe auto-sid-disable
     segment-routing ipv6 best-effort
 #
+segment-routing ipv6
+  locator P ipv6-prefix 33:: 96 static 16
+    {# `opcode ::110` is a random number. #}
+    opcode ::110 end-dt4 vpn-instance {{ vpn_name }}
+#
 commit
+
 {% elif action == 'delete' %}
+#
+undo ip vpn-instance {{ vpn_name }}
+#
+segment-routing ipv6
+  locator P ipv6-prefix 33:: 96 static 16
+    undo opcode ::110 end-dt4 vpn-instance {{ vpn_name }}
+#
+commit
 
 {% endif %}

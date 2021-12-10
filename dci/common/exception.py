@@ -144,7 +144,8 @@ class MXDeviceNotConnected(DCIException):
 
 
 class SSHCLIExecutionError(DCIException):
-    _msg_fmt = _("SSHCLI execution error, please check the outputs.")
+    _msg_fmt = _("SSHCLI execution error, please check the outputs or "
+                 "netmiko session_log file /tmp/netmiko_session_log.txt.")
 
 
 class L3VPNSRv6SlicingError(DCIException):

@@ -145,19 +145,19 @@ class L3VPNSRv6SlicingController(base.DCIController):
                                               route_distinguisher):
 
         # Create Tungstun Fabric Virtual Network.
-        #try:
-        #    tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
-        #                                  port=site.tf_api_server_port,
-        #                                  username=site.tf_username,
-        #                                  password=site.tf_password,
-        #                                  project=site.os_project_name)
-        #    vn_uuid = tf_client.create_virtal_network_with_user_defined_subnet(
-        #        vn_name, subnet_cidr)
-        #except Exception as err:
-        #    LOG.error(_LE("Failed to create virtual network [%(name)s], "
-        #                  "details %(err)s"),
-        #              {'name': vn_name, 'err': err})
-        #    raise err
+        try:
+            tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
+                                          port=site.tf_api_server_port,
+                                          username=site.tf_username,
+                                          password=site.tf_password,
+                                          project=site.os_project_name)
+            vn_uuid = tf_client.create_virtal_network_with_user_defined_subnet(
+                vn_name, subnet_cidr)
+        except Exception as err:
+            LOG.error(_LE("Failed to create virtual network [%(name)s], "
+                          "details %(err)s"),
+                      {'name': vn_name, 'err': err})
+            raise err
 
         # Edit L3VPN over SRv6 network slicing WAN node.
         kwargs = {
@@ -175,26 +175,29 @@ class L3VPNSRv6SlicingController(base.DCIController):
             ne_client.setup_node_for_l3vpn_srv6_be_slicing(action='create',
                                                            kwargs=kwargs)
         except Exception as err:
-            LOG.error(_LE("Failed to setup L3VPN over SRv6 network slicing WAN "
-                          "node [%(host)s], details %(err)s"),
+            LOG.error(_LE("Failed to setup L3VPN over SRv6 network slicing "
+                          "WAN node [%(host)s], details %(err)s"),
                       {'host': wan_node.ssh_host, 'err': err})
 
             LOG.info(_LE("Rollback virtual network [%s]..."), vn_name)
-            #tf_client.retry_to_delete_virtual_network(vn_name)
+            tf_client.retry_to_delete_virtual_network(vn_name)
             raise err
 
-        return "b6d9ac55-4c2f-4ba4-9d2c-7104aee79eff"
-        #return vn_uuid
+        return vn_uuid
 
     def _soft_delete_l3vpn_srv6_be_slicing_in_site(self, site, vn_name,
                                                    subnet_cidr, wan_node):
 
-        #tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
-        #                              port=site.tf_api_server_port,
-        #                              username=site.tf_username,
-        #                              password=site.tf_password,
-        #                              project=site.os_project_name)
-        #tf_client.retry_to_delete_virtual_network(vn_name)
+        tf_client = tf_vnc_api.Client(host=site.tf_api_server_host,
+                                      port=site.tf_api_server_port,
+                                      username=site.tf_username,
+                                      password=site.tf_password,
+                                      project=site.os_project_name)
+        tf_client.retry_to_delete_virtual_network(vn_name)
+
+        kwargs = {
+            'vpn_name': vn_name
+        }
 
         ne_client = netengine_api.Client(
             host=wan_node.ssh_host,
@@ -203,7 +206,7 @@ class L3VPNSRv6SlicingController(base.DCIController):
             password=wan_node.ssh_password,
             secret=wan_node.privilege_password)
         ne_client.setup_node_for_l3vpn_srv6_be_slicing(action='delete',
-                                                       kwargs={})
+                                                       kwargs=kwargs)
 
     @expose.expose(L3VPNSRv6Slicing, body=types.jsontype,
                    status_code=HTTPStatus.CREATED)
