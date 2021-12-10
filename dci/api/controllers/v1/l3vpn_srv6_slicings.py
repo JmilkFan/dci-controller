@@ -1,4 +1,5 @@
 from http import HTTPStatus
+import ipaddress
 import pecan
 import random
 import wsme
@@ -159,11 +160,14 @@ class L3VPNSRv6SlicingController(base.DCIController):
                       {'name': vn_name, 'err': err})
             raise err
 
+        net = ipaddress.ip_network(subnet_cidr)
         # Edit L3VPN over SRv6 network slicing WAN node.
         kwargs = {
             'vpn_name': vn_name,
             'rd': route_distinguisher,
-            'rt': route_target
+            'rt': route_target,
+            'subnet': str(net.network_address),
+            'netmask': str(net.netmask)
         }
         try:
             ne_client = netengine_api.Client(

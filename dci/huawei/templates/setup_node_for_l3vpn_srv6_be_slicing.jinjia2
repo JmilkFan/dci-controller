@@ -3,6 +3,8 @@
 ip vpn-instance {{ vpn_name }}
   ipv4-family
     route-distinguisher {{ rd }}
+    tnl-policy gre-policy
+    apply-label per-instance
     vpn-target {{ rt }} export-extcommunity
     vpn-target {{ rt }} import-extcommunity
 #
@@ -16,6 +18,8 @@ segment-routing ipv6
   locator P ipv6-prefix 33:: 96 static 16
     {# `opcode ::110` is a random number. #}
     opcode ::110 end-dt4 vpn-instance {{ vpn_name }}
+#
+ip route-static vpn-instance {{ vpn_name }} {{ subnet }} {{ netmask }} NULL0
 #
 commit
 
