@@ -11,13 +11,29 @@ ip vpn-instance {{ vpn_name }}
 bgp 38272
   ipv4-family vpn-instance {{ vpn_name }}
     {# `srh.pe` is the Locator ID, needs to be preset. #}
+    import-route direct
+    import-route static
     segment-routing ipv6 locator srh.pe auto-sid-disable
     segment-routing ipv6 best-effort
 #
+bgp 38272
+  ipv4-family vpnv4
+{% if node_type == 'ingress' %}
+    {# `172.16.0.221` is the Site01 TF Control Node IP address #}
+    peer 172.16.0.221 default-originate vpn-instance {{ vpn_name }}
+{% elif node_type == 'egress' %}
+    {# `172.17.0.225` is the Site02 TF Control Node IP address #}
+    peer 172.17.0.225 default-originate vpn-instance {{ vpn_name }}
+{% endif %}
+#
 segment-routing ipv6
-  locator P ipv6-prefix 33:: 96 static 16
-    {# `opcode ::110` is a random number. #}
-    opcode ::110 end-dt4 vpn-instance {{ vpn_name }}
+{% if node_type == 'ingress' %}
+  locator srh.pe ipv6-prefix 2001:253:1:A01:: 64 static 32
+{% elif node_type == 'egress' %}
+  locator srh.pe ipv6-prefix 2001:253:1:A82:: 64 static 32
+{% endif %}
+    {# `opcode ::XXX` is a random number. #}
+    opcode ::{{ opcode_num }} end-dt4 vpn-instance {{ vpn_name }}
 #
 ip route-static vpn-instance {{ vpn_name }} {{ subnet }} {{ netmask }} NULL0
 #
@@ -26,10 +42,6 @@ commit
 {% elif action == 'delete' %}
 #
 undo ip vpn-instance {{ vpn_name }}
-#
-segment-routing ipv6
-  locator P ipv6-prefix 33:: 96 static 16
-    undo opcode ::110 end-dt4 vpn-instance {{ vpn_name }}
 #
 commit
 

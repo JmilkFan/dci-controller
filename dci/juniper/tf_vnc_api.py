@@ -185,6 +185,9 @@ class Client(object):
             try:
                 self.delete_virtual_network(vn_name)
                 break
+            except vnc_api_exceptions.RefsExistError as err:
+                # NODE(fanguiju): Just only raise the RefsExistError exception.
+                raise err
             except Exception as err:
                 LOG.error(_LE("Failed to delete virtual network, "
                               "retry count [-%(cnt)s], details %(err)s"),

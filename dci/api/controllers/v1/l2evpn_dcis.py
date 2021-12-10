@@ -354,7 +354,7 @@ class L2EVPNDCIController(base.DCIController):
                           "details %(err)s"), {'name': name, 'err': err})
 
             LOG.info(_LI("Update L2 EVPN DCI state to `inactive`."))
-            obj_l2evpn_dci.state = 'inactve'
+            obj_l2evpn_dci.state = constants.INACTIVE
             obj_l2evpn_dci.save(context)
             return None
 

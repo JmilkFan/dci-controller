@@ -266,7 +266,7 @@ class L3EVPNDCIController(base.DCIController):
                           "details %(err)s"), {'name': name, 'err': err})
 
             LOG.info(_LI("Update L3 EVPN DCI state to `inactive`."))
-            obj_l3evpn_dci.state = 'inactve'
+            obj_l3evpn_dci.state = constants.INACTIVE
             obj_l3evpn_dci.save(context)
             return None
 
