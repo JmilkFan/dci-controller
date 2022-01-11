@@ -47,11 +47,17 @@ class L3VPNSRv6Slicing(base.APIBase):
     egress_node = wtypes.text
     """SRv6 VPN Egress Node."""
 
+    east_site_uuid = wtypes.text
+    """UUID of east site."""
+
     east_site_subnet_cidr = wtypes.text
     """Subnet CIDR."""
 
     east_site_vn_uuid = wtypes.text
     """UUID of Virtual Network."""
+
+    west_site_uuid = wtypes.text
+    """UUID of west site."""
 
     west_site_subnet_cidr = wtypes.text
     """Subnet CIDR."""
