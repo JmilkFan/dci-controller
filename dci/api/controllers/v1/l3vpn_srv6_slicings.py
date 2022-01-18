@@ -115,7 +115,7 @@ class L3VPNSRv6SlicingController(base.DCIController):
     """REST controller for L3VPN over SRv6 network slicing Controller.
     """
 
-    @expose.expose(L3VPNSRv6Slicing, wtypes.text)
+    @expose.expose(L3VPNSRv6Slicing, wtypes.text, status_code=HTTPStatus.OK)
     def get_one(self, uuid):
         """Get a single L3VPN over SRv6 network slicing by UUID.
 
@@ -127,7 +127,7 @@ class L3VPNSRv6SlicingController(base.DCIController):
         return L3VPNSRv6Slicing.convert_with_links(obj_l3vpn_srv6_slicing)
 
     @expose.expose(L3VPNSRv6SlicingCollection, wtypes.text,
-                   wtypes.text, wtypes.text)
+                   wtypes.text, wtypes.text, status_code=HTTPStatus.OK)
     def get_all(self, state=None, east_site_uuid=None, west_site_uuid=None):
         """Retrieve a list of L3VPN over SRv6 network slicing.
         """

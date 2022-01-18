@@ -12,6 +12,7 @@ services:
             - type: bind
               source: /var/log/dci-controller/
               target: /var/log/dci-controller/
+        network_mode: "host"
         ports:
             - "6699:6699"
         restart: always
