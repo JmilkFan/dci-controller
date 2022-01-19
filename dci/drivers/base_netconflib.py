@@ -84,7 +84,7 @@ class NETCONFParser(object):
         return elem.tag
 
 
-class NETCONFLib(object):
+class BaseNETCONFLib(object):
 
     def __init__(self, host, port, username, password, vendor):
 
@@ -125,7 +125,7 @@ class NETCONFLib(object):
         self._handler.close_session()
 
     def _check_reply(self, rpc_reply):
-        xml_str = rpc_reply.xml
+        xml_str = rpc_reply.data_xml
         if "<ok/>" in xml_str:
             print("Execute successfully.\n")
             return True
@@ -133,29 +133,41 @@ class NETCONFLib(object):
             print("Execute unccessfully\n.")
             return False
 
-    def _edit_config(self, config, target, error_option, is_locked):
+    def _huawei_edit_config(self, config, target, error_option, is_locked):
+        assert(":candidate" in self._handler.server_capabilities)
+        assert(":validate" in self._handler.server_capabilities)
+
+        if target != 'candidate':
+            raise
+
+        if error_option != 'rollback-on-error':
+            raise
+
+        if is_locked is False:
+            raise
+
+        with self._handler.locked(target='running'):
+            self._handler.discard_changes()
+            rpc_reply = self._handler.edit_config(
+                config=config,
+                target='candidate',
+                default_operation='merge',
+                test_option='test_then_set',
+                error_option=error_option)
+
+        if self._check_reply(rpc_reply):
+            self._handler.validate(source='candidate')
+            rpc_reply = self._handler.commit(confirmed=True)
+        else:
+            raise
+
+        return rpc_reply
+
+    def _edit_config(self, config, target, error_option, is_locked=False):
 
         if self.vendor == constants.HUAWEI:
-            if is_locked:
-                with self._handler.locked(target=target):
-                    self._handler.discard_changes()
-                    rpc_reply = self._handler.edit_config(
-                        target=target,
-                        error_option=error_option,
-                        config=config)
-            else:
-                self._handler.discard_changes()
-                rpc_reply = self._handler.edit_config(
-                    target=target,
-                    error_option=error_option,
-                    config=config)
-
-            if self._check_reply(rpc_reply):
-                rpc_reply = self._handler.commit()
-            else:
-                raise
-
-            return rpc_reply
+            rpc_reply = self._huawei_edit_config(
+                config, target, error_option, is_locked)
 
         elif self.vendor == constants.JUNIPER:
             err_msg = _LE("Juniper devices are not supported")
@@ -164,11 +176,13 @@ class NETCONFLib(object):
         else:
             raise
 
+        return rpc_reply
+
     def executor(self, rpc_command, lock=False, result_format='xml'):
 
         parser = NETCONFParser(rpc_command)
         rpc_op = parser.get_operation()
-        rpc_target_db = parser.get_datastore()
+        rpc_db = parser.get_datastore()
         rpc_req_data = ET.tostring(parser.get_data(), pretty_print=True)
 
         try:
@@ -178,26 +192,28 @@ class NETCONFLib(object):
 
             elif rpc_op == 'get-config':
                 rpc_reply = self._handler.get_config(
-                    source=rpc_target_db,
+                    source=rpc_db,
                     filter=('subtree', rpc_req_data))
 
             elif rpc_op == 'edit-config':
                 err_option = parser.get_error_option()
                 rpc_reply = self._edit_config(config=rpc_req_data,
-                                              target=rpc_target_db,
+                                              target=rpc_db,
                                               error_option=err_option,
                                               is_locked=lock)
             else:
                 rpc_reply = self._handler.dispatch(ET.fromstring(rpc_req_data))
         except ncclient_exceptions.TimeoutExpiredError as err:
             raise err
+        except ncclient_exceptions.TransportError as err:
+            raise err
         except Exception as err:
             raise err
 
         if result_format == 'xml':
-            return xml.dom.minidom.parseString(rpc_reply.xml).toprettyxml()
+            return xml.dom.minidom.parseString(rpc_reply.data_xml).toprettyxml()  # noqa
         elif result_format == 'dict':
-            return xmltodict.parse(rpc_reply.xml)
+            return xmltodict.parse(rpc_reply.data_xml)
         elif result_format == 'raw':
             return rpc_reply
         else:

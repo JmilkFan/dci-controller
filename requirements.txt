@@ -20,3 +20,5 @@ SQLAlchemy>=0.9.9
 oslo.db>=4.1.0
 oslo.versionedobjects>=1.31.2
 netmiko==3.4.0
+ncclient==0.6.10
+xmltodict==0.12.0
