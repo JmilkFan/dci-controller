@@ -24,7 +24,7 @@ class HuaweiNETCONFLib(BaseNETCONFLib):
                                                username, password)
 
     def _check_reply(self, rpc_reply):
-        xml_str = rpc_reply.data_xml
+        xml_str = rpc_reply.xml
         if "<ok/>" in xml_str:
             print("Execute successfully.\n")
             return True
@@ -32,10 +32,10 @@ class HuaweiNETCONFLib(BaseNETCONFLib):
             print("Execute unccessfully\n.")
             return False
 
-    def edit_config(self, config, target, error_option, is_locked=False):
+    def edit_config(self, config, target, test_option, error_option, is_locked=True):  # noqa
 
-        assert(":candidate" in self._handler.server_capabilities)
-        assert(":validate" in self._handler.server_capabilities)
+        assert(":candidate" in self._client.server_capabilities)
+        assert(":validate" in self._client.server_capabilities)
 
         if target != 'candidate':
             raise
@@ -43,22 +43,30 @@ class HuaweiNETCONFLib(BaseNETCONFLib):
         if error_option != 'rollback-on-error':
             raise
 
+        if test_option != 'test-then-set':
+            raise
+
         if is_locked is False:
             raise
 
-        with self._handler.locked(target='running'):
-            self._handler.discard_changes()
-            rpc_reply = self._handler.edit_config(
+        with self._client.locked(target='candidate'):
+
+            self._client.discard_changes()
+            rpc_reply = self._client.edit_config(
                 config=config,
                 target='candidate',
                 default_operation='merge',
-                test_option='test_then_set',
+                test_option=test_option,
                 error_option=error_option)
 
-        if self._check_reply(rpc_reply):
-            self._handler.validate(source='candidate')
-            rpc_reply = self._handler.commit(confirmed=True)
-        else:
+            if self._check_reply(rpc_reply):
+                self._client.validate(source='candidate')
+                rpc_reply = self._client.commit(confirmed=True)
+
+            else:
+                raise
+
+        if not self._check_reply(rpc_reply):
             raise
 
-        return rpc_reply
+        return None
