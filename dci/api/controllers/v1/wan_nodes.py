@@ -25,9 +25,11 @@ from dci.api.controllers import link
 from dci.api.controllers import types
 from dci.api import expose
 from dci.common import constants
+from dci.common import exception
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
 from dci.huawei import netengine_api
+from dci.manager import DCIManager
 from dci import objects
 
 
@@ -67,6 +69,18 @@ class WANNode(base.APIBase):
 
     privilege_password = wtypes.text
     """The Device Privileged mode password."""
+
+    netconf_host = wtypes.IPv4AddressType()
+    """The NETCONF host IP address."""
+
+    netconf_port = wtypes.IntegerType()
+    """The NETCONF host Port."""
+
+    netconf_username = wtypes.text
+    """The NETCONF user."""
+
+    netconf_password = wtypes.text
+    """The NETCONF password."""
 
     as_number = wtypes.IntegerType()
     """AS Number."""
@@ -112,7 +126,7 @@ class WANNodeController(base.DCIController):
     """REST controller for WAN node Controller.
     """
 
-    def _ping_check(self, wan_node):
+    def _sshcli_ping(self, wan_node):
 
         # Ping WAN Node SSHCLI API
         try:
@@ -160,17 +174,39 @@ class WANNodeController(base.DCIController):
         LOG.info(_LI("[wan_nodes: port] Request body = %s"), req_body)
         context = pecan.request.context
 
-        # Setup default privilege mode password.
-        if not req_body.get('privilege_password'):
-            req_body['privilege_password'] = ''
+        vendor = req_body.get('vendor')
+        if vendor not in constants.LIST_OF_VAILD_DEVICE_VENDOR:
+            msg = _LE("Invalid device vendor %(vendor)s, the optional "
+                      "vendor are %(list)s.") % {
+                          'vendor': vendor,
+                          'list': constants.LIST_OF_VAILD_DEVICE_VENDOR}
+            LOG.error(msg)
+            raise exception.InvalidRequestBody(msg)
 
-        self._ping_check(req_body)
+        configure_mode = req_body.get('configure_mode')
+        if configure_mode not in constants.LIST_OF_VAILD_WAN_NODE_CONFIGURA_MODE:  # noqa
+            msg = _LE("Invalid configuration mode %(mode)s, the optional "
+                      "configuration modes are %(list)s.") % {
+                          'mode': configure_mode,
+                          'list': constants.LIST_OF_VAILD_WAN_NODE_CONFIGURA_MODE}  # noqa
+            LOG.error(msg)
+            raise exception.InvalidRequestBody(msg)
 
-        # NOTE(fanguiju): Just only support HUAWEI SSHCLI now.
-        req_body['vendor'] = constants.HUAWEI
-        req_body['configure_mode'] = constants.SSHCLI
+        elif configure_mode == constants.NETCONF:
+            dci_manager = DCIManager(device_vendor=vendor,
+                                     host=req_body['netconf_host'],
+                                     port=req_body['netconf_port'],
+                                     username=req_body['netconf_username'],
+                                     password=req_body['netconf_password'])
+            dci_manager.netconf_ping()
+
+        elif configure_mode == constants.SSHCLI:
+            # Setup default privilege mode password.
+            if not req_body.get('privilege_password'):
+                req_body['privilege_password'] = ''
+            self._sshcli_ping(req_body)
+
         req_body['state'] = constants.ACTIVE
-
         obj_wan_node = objects.WANNode(context, **req_body)
         obj_wan_node.create(context)
         return WANNode.convert_with_links(obj_wan_node)
@@ -187,8 +223,6 @@ class WANNodeController(base.DCIController):
         for k, v in req_body.items():
             if getattr(obj_wan_node, k) != v:
                 setattr(obj_wan_node, k, v)
-
-        self._ping_check(obj_wan_node.as_dict())
 
         obj_wan_node.save(context)
         return WANNode.convert_with_links(obj_wan_node)

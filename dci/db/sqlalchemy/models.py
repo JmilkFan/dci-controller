@@ -140,11 +140,17 @@ class WANNode(Base):
     vendor = Column(Enum(constants.HUAWEI), nullable=False)
     configure_mode = Column(Enum(constants.SSHCLI, constants.NETCONF),
                             nullable=False)
-    ssh_host = Column(String(36), nullable=False)
-    ssh_port = Column(Integer, nullable=False)
-    ssh_username = Column(String(36), nullable=False)
-    ssh_password = Column(String(36), nullable=False)
+    ssh_host = Column(String(36), nullable=True)
+    ssh_port = Column(Integer, nullable=True)
+    ssh_username = Column(String(36), nullable=True)
+    ssh_password = Column(String(36), nullable=True)
     privilege_password = Column(String(36), nullable=True)
+
+    netconf_host = Column(String(36), nullable=True)
+    netconf_port = Column(Integer, nullable=True)
+    netconf_username = Column(String(36), nullable=True)
+    netconf_password = Column(String(36), nullable=True)
+
     as_number = Column(Integer, nullable=True)
     state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
 

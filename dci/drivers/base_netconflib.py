@@ -12,15 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log
+
 from ncclient import manager
 from ncclient.transport import errors as ncclient_exceptions
 
 import lxml.etree as ET
-import xml
 import xmltodict
 
 from dci.common import constants
-from dci.common.i18n import _LE
+from dci.common.i18n import _LI
+
+
+LOG = log.getLogger(__name__)
 
 
 class NETCONFParser(object):
@@ -29,10 +33,11 @@ class NETCONFParser(object):
 
     def __init__(self, rpc_command):
 
-        if isinstance(rpc_command, str):
+        if isinstance(rpc_command, str) or isinstance(rpc_command, bytes):
             self.rpc_command = ET.fromstring(
                 rpc_command,
-                parser=ET.XMLParser(remove_blank_text=True))
+                parser=ET.XMLParser(recover=False,
+                                    remove_blank_text=True))
         else:
             self.rpc_command = rpc_command
 
@@ -100,13 +105,13 @@ class NETCONFParser(object):
 
 class BaseNETCONFLib(object):
 
-    def __init__(self, host, port, username, password, vendor):
+    def __init__(self, device_vendor, host, port, username, password):
 
+        self.vendor = device_vendor
         self.host = host
         self.port = port
         self.username = username
         self.password = password
-        self.vendor = vendor
         self._handler = None
 
     def __enter__(self):
@@ -128,6 +133,7 @@ class BaseNETCONFLib(object):
             'device_params': {'name': vendor_str}
         }
 
+        LOG.info(_LI("Connect to device [%s] by ncclient."), self.host)
         try:
             self._handler = manager.connect(**link_device_params)
         except ncclient_exceptions.AuthenticationError as err:
@@ -136,7 +142,11 @@ class BaseNETCONFLib(object):
             raise err
 
     def __exit__(self, exc_ty, exc_val, tb):
-        self._handler.close_session()
+        LOG.info(_LI("Disconnect to device [%s] by ncclient."), self.host)
+        try:
+            self._handler.close_session()
+        except Exception as err:
+            raise err
 
     def _check_reply(self, rpc_reply):
         xml_str = rpc_reply.data_xml
@@ -147,74 +157,39 @@ class BaseNETCONFLib(object):
             print("Execute unccessfully\n.")
             return False
 
-    def _huawei_edit_config(self, config, target, error_option, is_locked):
-        assert(":candidate" in self._handler.server_capabilities)
-        assert(":validate" in self._handler.server_capabilities)
-
-        if target != 'candidate':
-            raise
-
-        if error_option != 'rollback-on-error':
-            raise
-
-        if is_locked is False:
-            raise
-
-        with self._handler.locked(target='running'):
-            self._handler.discard_changes()
-            rpc_reply = self._handler.edit_config(
-                config=config,
-                target='candidate',
-                default_operation='merge',
-                test_option='test_then_set',
-                error_option=error_option)
-
-        if self._check_reply(rpc_reply):
-            self._handler.validate(source='candidate')
-            rpc_reply = self._handler.commit(confirmed=True)
-        else:
-            raise
-
-        return rpc_reply
-
-    def _edit_config(self, config, target, error_option, is_locked=False):
-
-        if self.vendor == constants.HUAWEI:
-            rpc_reply = self._huawei_edit_config(
-                config, target, error_option, is_locked)
-
-        elif self.vendor == constants.JUNIPER:
-            err_msg = _LE("Juniper devices are not supported")
-            raise NotImplementedError(err_msg)
-
-        else:
-            raise
-
-        return rpc_reply
+    def edit_config(self, config, target, error_option, is_locked=False):
+        # NOTE(fanguiju): Implemented by device driver.
+        raise NotImplementedError()
 
     def executor(self, rpc_command, lock=False, result_format='xml'):
+        """NETCONF executor.
+
+        :param rpc_command: xmlstring.
+        """
 
         parser = NETCONFParser(rpc_command)
         rpc_op = parser.get_operation()
         rpc_db = parser.get_datastore()
         rpc_req_data = ET.tostring(parser.get_data(), pretty_print=True)
+        if isinstance(rpc_req_data, bytes):
+            rpc_req_data = rpc_req_data.decode('UTF-8')
 
         try:
             if rpc_op == 'get':
                 rpc_reply = self._handler.get(
-                    filter=('subtree', rpc_req_data))
+                    filter=rpc_req_data)
 
             elif rpc_op == 'get-config':
                 rpc_reply = self._handler.get_config(
                     source=rpc_db,
-                    filter=('subtree', rpc_req_data))
+                    filter=rpc_req_data)
 
             elif rpc_op == 'edit-config':
                 err_option = parser.get_error_option()
-                rpc_reply = self._edit_config(config=rpc_req_data,
-                                              target=rpc_db,
-                                              error_option=err_option,
-                                              is_locked=lock)
+                rpc_reply = self.edit_config(config=rpc_req_data,
+                                             target=rpc_db,
+                                             error_option=err_option,
+                                             is_locked=lock)
             else:
                 rpc_reply = self._handler.dispatch(ET.fromstring(rpc_req_data))
         except ncclient_exceptions.TimeoutExpiredError as err:
@@ -225,7 +200,8 @@ class BaseNETCONFLib(object):
             raise err
 
         if result_format == 'xml':
-            return xml.dom.minidom.parseString(rpc_reply.data_xml).toprettyxml()  # noqa
+            data = ET.fromstring(rpc_reply.data_xml.encode())
+            return ET.tostring(data).decode()
         elif result_format == 'dict':
             return xmltodict.parse(rpc_reply.data_xml)
         elif result_format == 'raw':

@@ -12,19 +12,26 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+# enum of state
 ACTIVE = 'ACTIVE'
 INACTIVE = 'INACTIVE'
 
+# enum of device vendor
 HUAWEI = 'huawei'
 JUNIPER = 'juniper'
+LIST_OF_VAILD_DEVICE_VENDOR = (HUAWEI, JUNIPER)
 
+# netmiko device mapping.
 DEVICE_VENDOR_MAPPING = {
     HUAWEI: 'huaweiyang',
     JUNIPER: 'junos'
 }
 
+# enum of wan node configura mode
 SSHCLI = 'sshcli'
 NETCONF = 'netconf'
+LIST_OF_VAILD_WAN_NODE_CONFIGURA_MODE = (SSHCLI, NETCONF)
 
+# enum of SRv6 routing type
 BEST_EFFORT = 'be'
 TRAFFIC_ENGINEERING = 'te'

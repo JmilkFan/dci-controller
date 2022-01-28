@@ -16,4 +16,34 @@ from dci.drivers.base_netconflib import BaseNETCONFLib
 
 
 class HuaweiNETCONFLib(BaseNETCONFLib):
-    pass
+
+    def edit_config(self, config, target, error_option, is_locked=False):
+
+        assert(":candidate" in self._handler.server_capabilities)
+        assert(":validate" in self._handler.server_capabilities)
+
+        if target != 'candidate':
+            raise
+
+        if error_option != 'rollback-on-error':
+            raise
+
+        if is_locked is False:
+            raise
+
+        with self._handler.locked(target='running'):
+            self._handler.discard_changes()
+            rpc_reply = self._handler.edit_config(
+                config=config,
+                target='candidate',
+                default_operation='merge',
+                test_option='test_then_set',
+                error_option=error_option)
+
+        if self._check_reply(rpc_reply):
+            self._handler.validate(source='candidate')
+            rpc_reply = self._handler.commit(confirmed=True)
+        else:
+            raise
+
+        return rpc_reply

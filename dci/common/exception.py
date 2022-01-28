@@ -140,6 +140,11 @@ class InvalidParameterValue(Invalid):
     _msg_fmt = _("%(err)s")
 
 
+class InvalidRequestBody(Invalid):
+    _msg_fmt = _("%(msg)s")
+    code = HTTPStatus.BAD_REQUEST
+
+
 class NotFound(DCIException):
     _msg_fmt = _("Resource could not be found.")
     code = HTTPStatus.NOT_FOUND

@@ -16,11 +16,62 @@
 Driver for HUAWEI NetEngine.
 """
 
-from dci import driver
+import jinja2
+import os
+
+from oslo_log import log
+
+from dci.common.i18n import _LE
+from dci.drivers.base_driver import DeviceDriver
+from dci.drivers.huawei.netconflib import HuaweiNETCONFLib
+
+LOG = log.getLogger(__name__)
 
 
-class NetEngineDriver(driver.DeviceDriver):
+class NetEngineDriver(DeviceDriver):
     """Executes commands relating to HUAWEI NetEngine Driver."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, device_vendor, host, port, username, password,
+                 *args, **kwargs):
         super(NetEngineDriver, self).__init__(*args, **kwargs)
+
+        self.netconf_cli = HuaweiNETCONFLib(
+            device_vendor, host, port, username, password)
+
+    def _get_rpc_command_from_template_file(self, file_name, kwargs={}):
+        """Get RPC Command from specified template file.
+
+        :return: Bytes of RPC Command can be parser by `lxml.etree.XMLParser`.
+        """
+        file_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__),
+                         'templates/%s' % file_name))
+
+        try:
+            template_loader = jinja2.FileSystemLoader(
+                searchpath=os.path.dirname(file_path))
+
+            jinja_env = jinja2.Environment(autoescape=True,
+                                           loader=template_loader,
+                                           trim_blocks=True,
+                                           lstrip_blocks=True)
+
+            template = jinja_env.get_template(os.path.basename(file_path))
+
+            return template.render(**kwargs).encode('UTF-8')
+
+        except Exception as err:
+            LOG.error(_LE("Failed to get template file content of [%(file)s], "
+                          "details %(err)s"),
+                      {'file': file_name, 'err': err})
+            raise err
+
+    def liveness(self):
+        file_name = 'get_ping.xml'
+        rpc_command = self._get_rpc_command_from_template_file(file_name)
+
+        with self.netconf_cli:
+            self.netconf_cli.executor(rpc_command)
+
+    def create_vpls_over_srv6_be_l2vpn(self):
+        pass
