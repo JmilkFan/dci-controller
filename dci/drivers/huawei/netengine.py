@@ -31,12 +31,10 @@ LOG = log.getLogger(__name__)
 class NetEngineDriver(DeviceDriver):
     """Executes commands relating to HUAWEI NetEngine Driver."""
 
-    def __init__(self, device_vendor, host, port, username, password,
-                 *args, **kwargs):
+    def __init__(self, host, port, username, password, *args, **kwargs):
         super(NetEngineDriver, self).__init__(*args, **kwargs)
 
-        self.netconf_cli = HuaweiNETCONFLib(
-            device_vendor, host, port, username, password)
+        self.netconf_cli = HuaweiNETCONFLib(host, port, username, password)
 
     def _get_rpc_command_from_template_file(self, file_name, kwargs={}):
         """Get RPC Command from specified template file.
@@ -66,12 +64,19 @@ class NetEngineDriver(DeviceDriver):
                       {'file': file_name, 'err': err})
             raise err
 
-    def liveness(self):
-        file_name = 'get_ping.xml'
-        rpc_command = self._get_rpc_command_from_template_file(file_name)
+    def _send_rpc_command_to_device(self, rpc_command):
+        self.netconf_cli.connect()
+        return self.netconf_cli.executor(rpc_command)
 
-        with self.netconf_cli:
-            self.netconf_cli.executor(rpc_command)
+    def liveness(self):
+        file_name = 'device_ping.xml'
+        rpc_command = self._get_rpc_command_from_template_file(file_name)
+        self._send_rpc_command_to_device(rpc_command)
 
     def create_vpls_over_srv6_be_l2vpn(self):
         pass
+
+    def test_netconf(self):
+        file_name = 'test.xml'
+        rpc_command = self._get_rpc_command_from_template_file(file_name)
+        return self._send_rpc_command_to_device(rpc_command)

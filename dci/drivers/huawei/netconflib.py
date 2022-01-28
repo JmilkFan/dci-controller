@@ -14,8 +14,23 @@
 
 from dci.drivers.base_netconflib import BaseNETCONFLib
 
+from dci.common import constants
+
 
 class HuaweiNETCONFLib(BaseNETCONFLib):
+
+    def __init__(self, host, port, username, password):
+        super(HuaweiNETCONFLib, self).__init__(constants.HUAWEI, host, port,
+                                               username, password)
+
+    def _check_reply(self, rpc_reply):
+        xml_str = rpc_reply.data_xml
+        if "<ok/>" in xml_str:
+            print("Execute successfully.\n")
+            return True
+        else:
+            print("Execute unccessfully\n.")
+            return False
 
     def edit_config(self, config, target, error_option, is_locked=False):
 

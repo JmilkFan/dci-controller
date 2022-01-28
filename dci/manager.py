@@ -28,26 +28,76 @@ DEVICE_DRIVER_MAPPING = {
 }
 
 
-class DCIManager(object):
+class WANManager(object):
 
-    def __init__(self, device_vendor, host, port, username, password):
-        """Load the driver from the one specified in args, or from flags."""
+    def __init__(self, device_connection_info, *args, **kwargs):
+        """Constructor of WAN Manager.
 
-        device_driver = DEVICE_DRIVER_MAPPING[device_vendor]
-        self.driver = importutils.import_object(device_driver,
-                                                device_vendor=device_vendor,
-                                                host=host,
-                                                port=port,
-                                                username=username,
-                                                password=password)
+        :param device_connection_info:
+            e.g.
+            {
+              "vendor": "huawei",
+              "netconf_host": "192.168.30.2",
+              "netconf_port": 22,
+              "netconf_username": "yunshan",
+              "netconf_password": "Huawei@123",
+            }
+        """
 
-    def netconf_ping(self):
+        self.device_handle = None
+        self._instantiate_wan_manager_handle(device_connection_info)
+
+    def _instantiate_wan_manager_handle(self, device_connection_info):
+        if not self.device_handle:
+            try:
+                device_vendor = device_connection_info['vendor']
+                device_driver = DEVICE_DRIVER_MAPPING[device_vendor]
+                self.driver_handle = importutils.import_object(
+                    device_driver,
+                    host=device_connection_info['netconf_host'],
+                    port=device_connection_info['netconf_port'],
+                    username=device_connection_info['netconf_username'],
+                    password=device_connection_info['netconf_password'])
+            except Exception as err:
+                LOG.error(_LE("Device driver instantiation failed, "
+                              "details %s"), err)
+                raise
+
+    def device_ping(self):
         try:
-            self.driver.liveness()
+            self.driver_handle.liveness()
         except Exception as err:
             LOG.error(_LE("Failed to PING WAN Node NETCONF Server, "
                           "details %s"), err)
             raise err
+
+    def test_netconf(self):
+        return self.driver_handle.test_netconf()
+
+
+class DCNManager(object):
+
+    def __init__(self, sdnc_connection_info, *args, **kwargs):
+        self.sdnc_handle = None
+        self._instantiate_dcn_manager_handle(sdnc_connection_info)
+
+    def _instantiate_dcn_manager_handle(self, sdnc_connection_info):
+        if not self.sdnc_handle:
+            pass
+
+
+class DCIManager(WANManager, DCNManager):
+
+    def __init__(self, device_connection_info, sdnc_connection_info, *args, **kwargs):  # noqa
+        """Load the driver from the one specified in args, or from flags.
+
+        :param device_connection_info: Connect to Router Device of WAN.
+        :param sdnc_connection_info: Connect to SDN Controller of DCN.
+        """
+        super(DCIManager, self).__init__(
+            device_connection_info=device_connection_info,
+            sdnc_connection_info=sdnc_connection_info,
+            *args, **kwargs)
 
     def create_vpls_over_srv6_be_l2vpn_slicing(self):
         pass

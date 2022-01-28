@@ -15,7 +15,8 @@
 from oslo_log import log
 
 from ncclient import manager
-from ncclient.transport import errors as ncclient_exceptions
+from ncclient.operations import errors as nccli_oper_excepts
+from ncclient.transport import errors as nccli_trans_excepts
 
 import lxml.etree as ET
 import xmltodict
@@ -105,57 +106,73 @@ class NETCONFParser(object):
 
 class BaseNETCONFLib(object):
 
-    def __init__(self, device_vendor, host, port, username, password):
+    def __init__(self, vendor, host, port, username, password):
 
-        self.vendor = device_vendor
+        self.vendor = vendor
         self.host = host
         self.port = port
         self.username = username
         self.password = password
-        self._handler = None
+        self._client = None
 
-    def __enter__(self):
+    def connect(self):
+        if not self._client:
+            link_device_params = {
+                'host': self.host,
+                'port': self.port,
+                'username': self.username,
+                'password': self.password,
+                'timeout': 360,
+                'allow_agent': False,
+                'look_for_keys': False,
+                'hostkey_verify': False,
+                'device_params': {'name': constants.DEVICE_VENDOR_MAPPING[self.vendor]}  # noqa
+            }
 
-        try:
-            vendor_str = constants.DEVICE_VENDOR_MAPPING[self.vendor]
-        except Exception as err:
-            raise err
+            LOG.info(_LI("Connect to device [%s] by ncclient."), self.host)
+            try:
+                self._client = manager.connect(**link_device_params)
+            except nccli_trans_excepts.AuthenticationError as err:
+                raise err
+            except Exception as err:
+                raise err
 
-        link_device_params = {
-            'host': self.host,
-            'port': self.port,
-            'username': self.username,
-            'password': self.password,
-            'timeout': 60,
-            'allow_agent': False,
-            'look_for_keys': False,
-            'hostkey_verify': False,
-            'device_params': {'name': vendor_str}
-        }
+    def disconnect(self):
+        if self._client.connected:
+            LOG.info(_LI("Disconnect to device [%s] by ncclient."), self.host)
+            try:
+                self._client.close_session()
+            except Exception as err:
+                raise err
 
-        LOG.info(_LI("Connect to device [%s] by ncclient."), self.host)
-        try:
-            self._handler = manager.connect(**link_device_params)
-        except ncclient_exceptions.AuthenticationError as err:
-            raise err
-        except Exception as err:
-            raise err
+    def _execute(self, rpc_op, rpc_db, rpc_req_data, err_option, lock):
 
-    def __exit__(self, exc_ty, exc_val, tb):
-        LOG.info(_LI("Disconnect to device [%s] by ncclient."), self.host)
-        try:
-            self._handler.close_session()
-        except Exception as err:
-            raise err
+        # NOTE(fanguiju): Use the `ncclient.manager.connect` Context Manager.
+        with self._client:
+            try:
+                if rpc_op == 'get':
+                    rpc_reply = self._client.get(
+                        filter=rpc_req_data)
 
-    def _check_reply(self, rpc_reply):
-        xml_str = rpc_reply.data_xml
-        if "<ok/>" in xml_str:
-            print("Execute successfully.\n")
-            return True
-        else:
-            print("Execute unccessfully\n.")
-            return False
+                elif rpc_op == 'get-config':
+                    rpc_reply = self._client.get_config(
+                        source=rpc_db,
+                        filter=rpc_req_data)
+
+                elif rpc_op == 'edit-config':
+                    rpc_reply = self.edit_config(config=rpc_req_data,
+                                                 target=rpc_db,
+                                                 error_option=err_option,
+                                                 is_locked=lock)
+                else:
+                    rpc_reply = self._client.dispatch(ET.fromstring(rpc_req_data))  # noqa
+            except nccli_trans_excepts.TransportError as err:
+                raise err
+            except nccli_oper_excepts.TimeoutExpiredError as err:
+                raise err
+            except Exception as err:
+                raise err
+        return rpc_reply
 
     def edit_config(self, config, target, error_option, is_locked=False):
         # NOTE(fanguiju): Implemented by device driver.
@@ -170,44 +187,32 @@ class BaseNETCONFLib(object):
         parser = NETCONFParser(rpc_command)
         rpc_op = parser.get_operation()
         rpc_db = parser.get_datastore()
-        rpc_req_data = ET.tostring(parser.get_data(), pretty_print=True)
-        if isinstance(rpc_req_data, bytes):
-            rpc_req_data = rpc_req_data.decode('UTF-8')
+        err_option = parser.get_error_option()
+        if parser.get_data():
+            rpc_req_data = ET.tostring(parser.get_data(), pretty_print=True)
+            if isinstance(rpc_req_data, bytes):
+                rpc_req_data = rpc_req_data.decode('UTF-8')
+        else:
+            rpc_req_data = None
 
-        try:
-            if rpc_op == 'get':
-                rpc_reply = self._handler.get(
-                    filter=rpc_req_data)
+        rpc_reply = self._execute(rpc_op, rpc_db, rpc_req_data, err_option, lock)  # noqa
 
-            elif rpc_op == 'get-config':
-                rpc_reply = self._handler.get_config(
-                    source=rpc_db,
-                    filter=rpc_req_data)
+        return self._return_result(rpc_reply, result_format)
 
-            elif rpc_op == 'edit-config':
-                err_option = parser.get_error_option()
-                rpc_reply = self.edit_config(config=rpc_req_data,
-                                             target=rpc_db,
-                                             error_option=err_option,
-                                             is_locked=lock)
-            else:
-                rpc_reply = self._handler.dispatch(ET.fromstring(rpc_req_data))
-        except ncclient_exceptions.TimeoutExpiredError as err:
-            raise err
-        except ncclient_exceptions.TransportError as err:
-            raise err
-        except Exception as err:
-            raise err
+    def _return_result(self, rpc_reply, result_format):
 
         if result_format == 'xml':
             data = ET.fromstring(rpc_reply.data_xml.encode())
             return ET.tostring(data).decode()
+
         elif result_format == 'dict':
             return xmltodict.parse(rpc_reply.data_xml)
+
         elif result_format == 'raw':
             return rpc_reply
+
         else:
             raise
 
     def get_server_capabilities(self):
-        return self._handler.server_capabilities
+        return self._client.server_capabilities

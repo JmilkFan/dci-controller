@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="9178" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <get>
+        <filter type="subtree">
+            <system
+                xmlns='urn:huawei:yang:huawei-system'>
+                <system-info>
+                    <sys-name></sys-name>
+                </system-info>
+            </system>
+        </filter>
+    </get>
+</rpc>

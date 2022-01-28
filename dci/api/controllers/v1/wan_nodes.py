@@ -29,7 +29,7 @@ from dci.common import exception
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
 from dci.huawei import netengine_api
-from dci.manager import DCIManager
+from dci import manager
 from dci import objects
 
 
@@ -193,12 +193,8 @@ class WANNodeController(base.DCIController):
             raise exception.InvalidRequestBody(msg)
 
         elif configure_mode == constants.NETCONF:
-            dci_manager = DCIManager(device_vendor=vendor,
-                                     host=req_body['netconf_host'],
-                                     port=req_body['netconf_port'],
-                                     username=req_body['netconf_username'],
-                                     password=req_body['netconf_password'])
-            dci_manager.netconf_ping()
+            wan_manager = manager.WANManager(device_connection_info=req_body)
+            wan_manager.device_ping()
 
         elif configure_mode == constants.SSHCLI:
             # Setup default privilege mode password.
