@@ -12,9 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from dci.drivers.base_netconflib import BaseNETCONFLib
+from oslo_log import log
 
 from dci.common import constants
+from dci.common.i18n import _LI
+from dci.drivers.base_netconflib import BaseNETCONFLib
+
+LOG = log.getLogger(__name__)
 
 
 class HuaweiNETCONFLib(BaseNETCONFLib):
@@ -26,30 +30,35 @@ class HuaweiNETCONFLib(BaseNETCONFLib):
     def _check_reply(self, rpc_reply):
         xml_str = rpc_reply.xml
         if "<ok/>" in xml_str:
-            print("Execute successfully.\n")
+            LOG.info(_LI("NETCONF Client edit-config execute successfully."))
             return True
         else:
-            print("Execute unccessfully\n.")
+            LOG.info(_LI("NETCONF Client edit-config execute unccessfully."))
             return False
 
-    def edit_config(self, config, target, test_option, error_option, is_locked=True):  # noqa
+    def edit_config(self, config, target, default_operation, test_option, error_option, is_locked=True):  # noqa
 
-        assert(":candidate" in self._client.server_capabilities)
-        assert(":validate" in self._client.server_capabilities)
+        if ":rollback-on-error" not in self._client.server_capabilities \
+                or ":candidate" not in self._client.server_capabilities \
+                or ":validate" not in self._client.server_capabilities:
+            raise
 
         if target != 'candidate':
             raise
 
-        if error_option != 'rollback-on-error':
+        if default_operation != 'merge':
             raise
 
         if test_option != 'test-then-set':
             raise
 
+        if error_option != 'rollback-on-error':
+            raise
+
         if is_locked is False:
             raise
 
-        with self._client.locked(target='candidate'):
+        with self._client.locked(target='running'):
 
             self._client.discard_changes()
             rpc_reply = self._client.edit_config(
@@ -61,7 +70,7 @@ class HuaweiNETCONFLib(BaseNETCONFLib):
 
             if self._check_reply(rpc_reply):
                 self._client.validate(source='candidate')
-                rpc_reply = self._client.commit(confirmed=True)
+                rpc_reply = self._client.commit(confirmed=False)
 
             else:
                 raise

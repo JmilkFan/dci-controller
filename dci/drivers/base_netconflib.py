@@ -73,6 +73,17 @@ class NETCONFParser(object):
             return NETCONFParser._get_tag(source[0])
         return None
 
+    def get_default_operation(self):
+        """Return NETCONF error_option from rpc command.
+        """
+        op = self.get_operation()
+        ns = self.get_namespace()
+        if op == 'edit-config':
+            option = self.rpc_command.find('{%s}edit-config/{%s}default-operation' % (ns, ns))  # noqa
+            if option is not None:
+                return option.text
+        return None
+
     def get_error_option(self):
         """Return NETCONF error_option from rpc command.
         """
@@ -133,13 +144,12 @@ class BaseNETCONFLib(object):
                 'port': self.port,
                 'username': self.username,
                 'password': self.password,
-                'timeout': 360,
+                'timeout': 120,
                 'allow_agent': False,
                 'look_for_keys': False,
                 'hostkey_verify': False,
                 'device_params': {'name': constants.DEVICE_VENDOR_MAPPING[self.vendor]}  # noqa
             }
-
             LOG.info(_LI("Connect to device [%s] by ncclient."), self.host)
             try:
                 self._client = manager.connect(**link_device_params)
@@ -156,7 +166,8 @@ class BaseNETCONFLib(object):
             except Exception as err:
                 raise err
 
-    def _execute(self, rpc_op, rpc_db, rpc_req_data, test_option, err_option, lock):  # noqa
+    def _execute(self, rpc_op, rpc_db, rpc_req_data,
+                 def_oper, test_option, err_option, lock):
 
         # NOTE(fanguiju): Use the `ncclient.manager.connect` Context Manager.
         with self._client:
@@ -173,6 +184,7 @@ class BaseNETCONFLib(object):
                 elif rpc_op == 'edit-config':
                     rpc_reply = self.edit_config(config=rpc_req_data,
                                                  target=rpc_db,
+                                                 default_operation=def_oper,
                                                  test_option=test_option,
                                                  error_option=err_option,
                                                  is_locked=lock)
@@ -199,6 +211,7 @@ class BaseNETCONFLib(object):
         parser = NETCONFParser(rpc_command)
         rpc_op = parser.get_operation()
         rpc_db = parser.get_datastore()
+        def_oper = parser.get_default_operation()
         test_option = parser.get_test_option()
         err_option = parser.get_error_option()
 
@@ -209,7 +222,8 @@ class BaseNETCONFLib(object):
         else:
             rpc_req_data = None
 
-        rpc_reply = self._execute(rpc_op, rpc_db, rpc_req_data, test_option, err_option, lock)  # noqa
+        rpc_reply = self._execute(rpc_op, rpc_db, rpc_req_data,
+                                  def_oper, test_option, err_option, lock)
 
         if rpc_reply:
             return self._return_result(rpc_reply, result_format)

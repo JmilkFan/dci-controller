@@ -66,7 +66,9 @@ class NetEngineDriver(DeviceDriver):
 
     def _send_rpc_command_to_device(self, rpc_command):
         self.netconf_cli.connect()
-        return self.netconf_cli.executor(rpc_command)
+        result = self.netconf_cli.executor(rpc_command)
+        self.netconf_cli.disconnect()
+        return result
 
     def liveness(self):
         file_name = 'device_ping.xml'
