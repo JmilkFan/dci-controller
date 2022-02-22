@@ -18,9 +18,7 @@ from pecan import rest
 from wsme import types as wtypes
 
 from dci.api.controllers import base
-from dci.api.controllers.v1 import l2evpn_dcis
-from dci.api.controllers.v1 import l3evpn_dcis
-from dci.api.controllers.v1 import l3vpn_srv6_slicings
+from dci.api.controllers.v1 import evpn_vpls_over_srv6_be_slicings
 from dci.api.controllers.v1 import sites
 from dci.api.controllers.v1 import test_netconf
 from dci.api.controllers.v1 import wan_nodes
@@ -44,10 +42,8 @@ class Controller(rest.RestController):
     """Version 1 API controller root"""
 
     sites = sites.SiteController()
-    l3evpn_dcis = l3evpn_dcis.L3EVPNDCIController()
-    l2evpn_dcis = l2evpn_dcis.L2EVPNDCIController()
     wan_nodes = wan_nodes.WANNodeController()
-    l3vpn_srv6_slicings = l3vpn_srv6_slicings.L3VPNSRv6SlicingController()
+    evpn_vpls_over_srv6_be_slicings = evpn_vpls_over_srv6_be_slicings.EVPNVPLSoSRv6SlicingController()  # noqa
     test_netconf = test_netconf.TestController()
 
     @expose.expose(V1)

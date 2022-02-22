@@ -27,9 +27,8 @@ from dci.api import expose
 from dci.common import constants
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
-from dci.juniper import mx_api
-from dci.juniper import tf_vnc_api
 from dci import objects
+from dci.sdn_controller.tungsten_fabric import vnc_api_client as tf_vnc_api
 
 
 LOG = log.getLogger(__name__)
@@ -50,18 +49,6 @@ class Site(base.APIBase):
 
     name = wtypes.text
     """The name of DCI site."""
-
-    netconf_host = wtypes.IPv4AddressType()
-    """The NETCONF host IP address."""
-
-    netconf_port = wtypes.IntegerType()
-    """The NETCONF host Port."""
-
-    netconf_username = wtypes.text
-    """The NETCONF user."""
-
-    netconf_password = wtypes.text
-    """The NETCONF password."""
 
     tf_api_server_host = wtypes.IPv4AddressType()
     """The Tungsten Fabric API Server IP address."""
@@ -151,19 +138,6 @@ class SiteController(base.DCIController):
                 # TODO(fanguiju): API response exception details and failure
                 # codes.
                 LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
-                              "site login informations %s."), site)
-                raise err
-
-        # Ping MX NETCONF API
-        if site.get('netconf_host'):
-            try:
-                mx_client = mx_api.Client(site['netconf_host'],
-                                          site['netconf_port'],
-                                          site['netconf_username'],
-                                          site['netconf_password'])
-                mx_client.ping()
-            except Exception as err:
-                LOG.error(_LE("Failed to PING MX NETCONF Server, "
                               "site login informations %s."), site)
                 raise err
 

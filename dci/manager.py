@@ -22,13 +22,13 @@ LOG = log.getLogger(__name__)
 
 
 DEVICE_DRIVER_MAPPING = {
-    'huawei': 'dci.drivers.huawei.netengine.NetEngineDriver',
+    'huawei': 'dci.device_manager.drivers.huawei.netengine.NetEngineDriver',
     # TODO(fanguiju): Juniper devices are not supported.
-    'juniper': 'dci.drivers.juniper.junos.JunosDriver'
+    'juniper': 'dci.device_manager.drivers.juniper.junos.JunosDriver'
 }
 
 
-class WANManager(object):
+class DeviceManager(object):
 
     def __init__(self, device_connection_info, *args, **kwargs):
         """Constructor of WAN Manager.
@@ -71,8 +71,23 @@ class WANManager(object):
                           "details %s"), err)
             raise err
 
+    def create_an_and_wan_evpn_vpls_over_srv6_be(self):
+        pass
+
     def test_netconf(self):
         return self.driver_handle.test_netconf()
+
+
+class DCIManager(DeviceManager):
+
+    def create_wan_evpn_vpls_over_srv6_be(self):
+        pass
+
+
+class DCAManager(DeviceManager):
+
+    def create_an_evpn_vxlan(self):
+        pass
 
 
 class DCNManager(object):
@@ -85,8 +100,11 @@ class DCNManager(object):
         if not self.sdnc_handle:
             pass
 
+    def create_vn_evpn_vxlan(self):
+        pass
 
-class DCIManager(WANManager, DCNManager):
+
+class NetworkSlicingManager(DCNManager, DCAManager, DCIManager):
 
     def __init__(self, device_connection_info, sdnc_connection_info, *args, **kwargs):  # noqa
         """Load the driver from the one specified in args, or from flags.

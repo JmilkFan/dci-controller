@@ -16,12 +16,12 @@ from oslo_log import log
 
 from dci.common import constants
 from dci.common.i18n import _LI
-from dci.drivers.base_netconflib import BaseNETCONFLib
+from dci.device_manager.drivers import base_netconflib
 
 LOG = log.getLogger(__name__)
 
 
-class HuaweiNETCONFLib(BaseNETCONFLib):
+class HuaweiNETCONFLib(base_netconflib.BaseNETCONFLib):
 
     def __init__(self, host, port, username, password):
         super(HuaweiNETCONFLib, self).__init__(constants.HUAWEI, host, port,

@@ -22,8 +22,8 @@ import os
 from oslo_log import log
 
 from dci.common.i18n import _LE
-from dci.drivers.base_driver import DeviceDriver
-from dci.drivers.huawei.netconflib import HuaweiNETCONFLib
+from dci.device_manager.base_driver import DeviceDriver
+from dci.device_manager.drivers.huawei import netconflib
 
 LOG = log.getLogger(__name__)
 
@@ -34,7 +34,8 @@ class NetEngineDriver(DeviceDriver):
     def __init__(self, host, port, username, password, *args, **kwargs):
         super(NetEngineDriver, self).__init__(*args, **kwargs)
 
-        self.netconf_cli = HuaweiNETCONFLib(host, port, username, password)
+        self.netconf_cli = netconflib.HuaweiNETCONFLib(
+            host, port, username, password)
 
     def _get_rpc_command_from_template_file(self, file_name, kwargs={}):
         """Get RPC Command from specified template file.

@@ -28,7 +28,6 @@ from dci.common import constants
 from dci.common import exception
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
-from dci.huawei import netengine_api
 from dci import manager
 from dci import objects
 
@@ -51,24 +50,6 @@ class WANNode(base.APIBase):
 
     vendor = wtypes.text
     """Network Device Vendor."""
-
-    configure_mode = wtypes.text
-    """Deivce Configuration mode."""
-
-    ssh_host = wtypes.IPv4AddressType()
-    """The SSHCLI host IP address."""
-
-    ssh_port = wtypes.IntegerType()
-    """The SSHCLI host Port."""
-
-    ssh_username = wtypes.text
-    """The SSHCLI user."""
-
-    ssh_password = wtypes.text
-    """The SSHCLI password."""
-
-    privilege_password = wtypes.text
-    """The Device Privileged mode password."""
 
     netconf_host = wtypes.IPv4AddressType()
     """The NETCONF host IP address."""
@@ -126,22 +107,6 @@ class WANNodeController(base.DCIController):
     """REST controller for WAN node Controller.
     """
 
-    def _sshcli_ping(self, wan_node):
-
-        # Ping WAN Node SSHCLI API
-        try:
-            ssh_client = netengine_api.Client(
-                host=wan_node['ssh_host'],
-                port=wan_node['ssh_port'],
-                username=wan_node['ssh_username'],
-                password=wan_node['ssh_password'],
-                secret=wan_node['privilege_password'])
-            ssh_client.ping_device()
-        except Exception as err:
-            LOG.error(_LE("Failed to PING WAN Node SSHCLI Server, "
-                          "wan_node login informations %s."), wan_node)
-            raise err
-
     @expose.expose(WANNode, wtypes.text)
     def get_one(self, uuid):
         """Get a single WANNode by UUID.
@@ -183,24 +148,8 @@ class WANNodeController(base.DCIController):
             LOG.error(msg)
             raise exception.InvalidRequestBody(msg)
 
-        configure_mode = req_body.get('configure_mode')
-        if configure_mode not in constants.LIST_OF_VAILD_WAN_NODE_CONFIGURA_MODE:  # noqa
-            msg = _LE("Invalid configuration mode %(mode)s, the optional "
-                      "configuration modes are %(list)s.") % {
-                          'mode': configure_mode,
-                          'list': constants.LIST_OF_VAILD_WAN_NODE_CONFIGURA_MODE}  # noqa
-            LOG.error(msg)
-            raise exception.InvalidRequestBody(msg)
-
-        elif configure_mode == constants.NETCONF:
-            wan_manager = manager.WANManager(device_connection_info=req_body)
-            wan_manager.device_ping()
-
-        elif configure_mode == constants.SSHCLI:
-            # Setup default privilege mode password.
-            if not req_body.get('privilege_password'):
-                req_body['privilege_password'] = ''
-            self._sshcli_ping(req_body)
+        dev_manager = manager.DeviceManager(device_connection_info=req_body)  # noqa
+        dev_manager.device_ping()
 
         req_body['state'] = constants.ACTIVE
         obj_wan_node = objects.WANNode(context, **req_body)

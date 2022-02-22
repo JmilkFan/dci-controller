@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="cli2xml-5" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <edit-config>
+    <target>
+      <candidate/>
+    </target>
+    <default-operation>merge</default-operation>
+    <test-option>test-then-set</test-option>
+    <error-option>rollback-on-error</error-option>
+    <config xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+      <bd xmlns="urn:huawei:yang:huawei-bd">
+        <instances>
+          <instance nc:operation="create">
+            <id>11</id>
+            <admin-status>up</admin-status>
+            <statistic-enable>disable</statistic-enable>
+            <broadcast-discard>disable</broadcast-discard>
+            <unknown-multicast-discard>disable</unknown-multicast-discard>
+            <unknown-unicast-discard>disable</unknown-unicast-discard>
+            <mac-learning>enable</mac-learning>
+            <split-horizon>disable</split-horizon>
+            <service-points>
+              <service-point nc:operation="create">
+                <interface-name>GigabitEthernet0/2/8.11</interface-name>
+                <split-horizon>disable</split-horizon>
+                <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="merge">
+                  <e-tree-leaf>false</e-tree-leaf>
+                </evpn>
+              </service-point>
+            </service-points>
+            <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="create">
+              <name>fgj_wan_vpn</name>
+            </evpn>
+          </instance>
+          <instance nc:operation="create">
+            <id>26</id>
+            <admin-status>up</admin-status>
+            <statistic-enable>disable</statistic-enable>
+            <broadcast-discard>disable</broadcast-discard>
+            <unknown-multicast-discard>disable</unknown-multicast-discard>
+            <unknown-unicast-discard>disable</unknown-unicast-discard>
+            <mac-learning>enable</mac-learning>
+            <split-horizon>disable</split-horizon>
+            <service-points>
+              <service-point nc:operation="create">
+                <interface-name>GigabitEthernet0/2/9.26</interface-name>
+                <split-horizon>disable</split-horizon>
+                <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="merge">
+                  <e-tree-leaf>false</e-tree-leaf>
+                </evpn>
+              </service-point>
+            </service-points>
+            <nvo3 xmlns="urn:huawei:yang:huawei-nvo3">
+              <vni-list nc:operation="create">
+                <vni>26</vni>
+                <split-horizon>true</split-horizon>
+              </vni-list>
+            </nvo3>
+            <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="create">
+              <name>fgj_dcn_access_vpn</name>
+            </evpn>
+          </instance>
+        </instances>
+      </bd>
+      <evpn xmlns="urn:huawei:yang:huawei-evpn">
+        <instances>
+          <instance nc:operation="create">
+            <name>fgj_wan_vpn</name>
+            <type>bd-evpn</type>
+            <bd-evpn nc:operation="create">
+              <rd>10000:2</rd>
+              <local-remote-frr>default</local-remote-frr>
+              <mac-balance-enable>false</mac-balance-enable>
+              <bypass-vxlan>default</bypass-vxlan>
+              <etree-enable>false</etree-enable>
+              <srv6-mode>be</srv6-mode>
+              <control-word>false</control-word>
+              <rts>
+                <rt nc:operation="create">
+                  <vrf-rt-type>import-extcommunity</vrf-rt-type>
+                  <vrf-rt-value>1000:2</vrf-rt-value>
+                </rt>
+                <rt nc:operation="create">
+                  <vrf-rt-type>export-extcommunity</vrf-rt-type>
+                  <vrf-rt-value>1000:2</vrf-rt-value>
+                </rt>
+              </rts>
+              <locator xmlns="urn:huawei:yang:huawei-evpn-srv6" nc:operation="create">
+                <srv6-locator>evpn.srv61.test_arg</srv6-locator>
+                <unicast-locator>evpn.srv61.test</unicast-locator>
+              </locator>
+            </bd-evpn>
+            <mac-limit xmlns="urn:huawei:yang:huawei-macm">
+              <alarm-threshold nc:operation="create">
+                <lower>70</lower>
+                <upper>80</upper>
+              </alarm-threshold>
+            </mac-limit>
+          </instance>
+          <instance nc:operation="create">
+            <name>fgj_dcn_access_vpn</name>
+            <type>bd-evpn</type>
+            <bd-evpn nc:operation="create">
+              <rd>20768:1001</rd>
+              <local-remote-frr>default</local-remote-frr>
+              <mac-balance-enable>false</mac-balance-enable>
+              <bypass-vxlan>default</bypass-vxlan>
+              <etree-enable>false</etree-enable>
+              <control-word>false</control-word>
+              <rts>
+                <rt nc:operation="create">
+                  <vrf-rt-type>export-extcommunity</vrf-rt-type>
+                  <vrf-rt-value>20768:20769</vrf-rt-value>
+                </rt>
+                <rt nc:operation="create">
+                  <vrf-rt-type>import-extcommunity</vrf-rt-type>
+                  <vrf-rt-value>20768:20769</vrf-rt-value>
+                </rt>
+              </rts>
+            </bd-evpn>
+            <mac-limit xmlns="urn:huawei:yang:huawei-macm">
+              <alarm-threshold nc:operation="create">
+                <lower>70</lower>
+                <upper>80</upper>
+              </alarm-threshold>
+            </mac-limit>
+          </instance>
+        </instances>
+      </evpn>
+      <ifm xmlns="urn:huawei:yang:huawei-ifm">
+        <interfaces>
+          <interface nc:operation="create">
+            <name>Nve1</name>
+            <class>main-interface</class>
+            <type>Nve</type>
+            <number>1</number>
+            <admin-status>up</admin-status>
+            <link-protocol>ethernet</link-protocol>
+            <router-type>broadcast</router-type>
+            <clear-ip-df>false</clear-ip-df>
+            <link-up-down-trap-enable>true</link-up-down-trap-enable>
+            <statistic-enable>true</statistic-enable>
+            <statistic-mode>interface-based</statistic-mode>
+            <mtu>1500</mtu>
+            <spread-mtu-flag>false</spread-mtu-flag>
+            <vrf-name>_public_</vrf-name>
+            <l2-mode-enable>false</l2-mode-enable>
+            <nve xmlns="urn:huawei:yang:huawei-nvo3">
+              <attribute nc:operation="create">
+                <source-vtep-ip>11.11.11.12</source-vtep-ip>
+              </attribute>
+            </nve>
+          </interface>
+          <interface nc:operation="create">
+            <name>GigabitEthernet0/2/8.11</name>
+            <class>sub-interface</class>
+            <type>GigabitEthernet</type>
+            <parent-name>GigabitEthernet0/2/8</parent-name>
+            <number>11</number>
+            <admin-status>up</admin-status>
+            <link-protocol>ethernet</link-protocol>
+            <router-type>broadcast</router-type>
+            <clear-ip-df>false</clear-ip-df>
+            <link-up-down-trap-enable>true</link-up-down-trap-enable>
+            <statistic-enable>false</statistic-enable>
+            <statistic-mode>interface-based</statistic-mode>
+            <spread-mtu-flag>false</spread-mtu-flag>
+            <vrf-name>_public_</vrf-name>
+            <l2-mode-enable>true</l2-mode-enable>
+            <ethernet xmlns="urn:huawei:yang:huawei-ethernet">
+              <l2-sub-interface nc:operation="create">
+                <local-switch>disable</local-switch>
+                <dot1q nc:operation="create">
+                  <vlans nc:operation="create">
+                    <vlan-list>100</vlan-list>
+                  </vlans>
+                </dot1q>
+              </l2-sub-interface>
+            </ethernet>
+            <multicast-bas xmlns="urn:huawei:yang:huawei-multicast-bas" nc:operation="create">
+              <authorization-enable>false</authorization-enable>
+            </multicast-bas>
+          </interface>
+          <interface nc:operation="create">
+            <name>GigabitEthernet0/2/9.26</name>
+            <class>sub-interface</class>
+            <type>GigabitEthernet</type>
+            <parent-name>GigabitEthernet0/2/9</parent-name>
+            <number>26</number>
+            <admin-status>up</admin-status>
+            <link-protocol>ethernet</link-protocol>
+            <router-type>broadcast</router-type>
+            <clear-ip-df>false</clear-ip-df>
+            <link-up-down-trap-enable>true</link-up-down-trap-enable>
+            <statistic-enable>false</statistic-enable>
+            <statistic-mode>interface-based</statistic-mode>
+            <spread-mtu-flag>false</spread-mtu-flag>
+            <vrf-name>_public_</vrf-name>
+            <l2-mode-enable>true</l2-mode-enable>
+            <ethernet xmlns="urn:huawei:yang:huawei-ethernet">
+              <l2-sub-interface nc:operation="create">
+                <local-switch>disable</local-switch>
+                <dot1q nc:operation="create">
+                  <vlans nc:operation="create">
+                    <vlan-list>100</vlan-list>
+                  </vlans>
+                </dot1q>
+              </l2-sub-interface>
+            </ethernet>
+            <multicast-bas xmlns="urn:huawei:yang:huawei-multicast-bas" nc:operation="create">
+              <authorization-enable>false</authorization-enable>
+            </multicast-bas>
+          </interface>
+        </interfaces>
+      </ifm>
+      <network-instance xmlns="urn:huawei:yang:huawei-network-instance">
+        <instances>
+          <instance>
+            <name>_public_</name>
+            <srv6 xmlns="urn:huawei:yang:huawei-srv6">
+              <locators>
+                <locator nc:operation="merge">
+                  <name>evpn.srv61.test</name>
+                  <prefix>20::</prefix>
+                  <prefix-length>64</prefix-length>
+                  <static-length>0</static-length>
+                  <args-length>0</args-length>
+                </locator>
+                <locator nc:operation="merge">
+                  <name>evpn.srv61.test_arg</name>
+                  <prefix>21::</prefix>
+                  <prefix-length>64</prefix-length>
+                  <static-length>0</static-length>
+                  <args-length>10</args-length>
+                </locator>
+              </locators>
+              <global-ipv6uc-attribute xmlns="urn:huawei:yang:huawei-unicast-fwd-srv6" nc:operation="merge">
+                <srv6-ttl-mode>pipe</srv6-ttl-mode>
+              </global-ipv6uc-attribute>
+            </srv6>
+          </instance>
+        </instances>
+      </network-instance>
+      <nvo3 xmlns="urn:huawei:yang:huawei-nvo3">
+        <vni-instances>
+          <vni-instance nc:operation="create">
+            <vni>26</vni>
+            <source-nve>Nve1</source-nve>
+            <protocol-bgp>peer</protocol-bgp>
+            <static-peers>
+              <static-peer nc:operation="create">
+                <address>172.16.0.221</address>
+              </static-peer>
+            </static-peers>
+          </vni-instance>
+        </vni-instances>
+      </nvo3>
+    </config>
+  </edit-config>
+</rpc>

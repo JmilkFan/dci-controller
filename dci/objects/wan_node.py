@@ -37,18 +37,10 @@ class WANNode(base.DCIObject, object_base.VersionedObjectDictCompat):
         'name': object_fields.StringField(nullable=True),
         'vendor': object_fields.EnumField(
             valid_values=[constants.HUAWEI], nullable=False),
-        'configure_mode': object_fields.EnumField(
-            valid_values=[constants.SSHCLI, constants.NETCONF],
-            nullable=False),
-        'ssh_host': object_fields.StringField(nullable=True),
-        'ssh_port': object_fields.IntegerField(nullable=True),
-        'ssh_username': object_fields.StringField(nullable=True),
-        'ssh_password': object_fields.StringField(nullable=True),
-        'privilege_password': object_fields.StringField(nullable=True),
-        'netconf_host': object_fields.StringField(nullable=True),
-        'netconf_port': object_fields.IntegerField(nullable=True),
-        'netconf_username': object_fields.StringField(nullable=True),
-        'netconf_password': object_fields.StringField(nullable=True),
+        'netconf_host': object_fields.StringField(nullable=False),
+        'netconf_port': object_fields.IntegerField(nullable=False),
+        'netconf_username': object_fields.StringField(nullable=False),
+        'netconf_password': object_fields.StringField(nullable=False),
         'as_number': object_fields.IntegerField(nullable=True),
         'state': object_fields.EnumField(
             valid_values=[constants.ACTIVE, constants.INACTIVE],

@@ -213,196 +213,6 @@ class Connection(api.Connection):
                     resource='Site',
                     msg='with uuid=%s' % uuid)
 
-    # l3evpn_dci
-    def l3evpn_dci_get(self, context, uuid):
-        query = model_query(
-            context,
-            models.L3EVPNDCI).filter_by(uuid=uuid)
-        try:
-            return query.one()
-        except NoResultFound:
-            raise exception.ResourceNotFound(
-                resource='L3EVPNDCI',
-                msg='with uuid=%s' % uuid)
-
-    def l3evpn_dci_list_by_filters(self, context, filters,
-                                   sort_key='created_at',
-                                   sort_dir='desc', limit=None,
-                                   marker=None, join_columns=None):
-        """Return L3 EVPN DCI that match all filters sorted by the given keys.
-        """
-
-        if limit == 0:
-            return []
-
-        query_prefix = model_query(context, models.L3EVPNDCI)
-        filters = copy.deepcopy(filters)
-
-        exact_match_filter_names = ['state',
-                                    'east_site_uuid',
-                                    'west_site_uuid']
-
-        # Filter the query
-        query_prefix = self._exact_filter(models.L3EVPNDCI, query_prefix,
-                                          filters, exact_match_filter_names)
-        if query_prefix is None:
-            return []
-        return _paginate_query(context, models.L3EVPNDCI, query_prefix,
-                               limit, marker, sort_key, sort_dir)
-
-    def l3evpn_dci_list(self, context, limit=None, marker=None, sort_key=None,
-                        sort_dir=None):
-        query = model_query(context, models.L3EVPNDCI)
-        return _paginate_query(context, models.L3EVPNDCI, query,
-                               limit, marker, sort_key, sort_dir)
-
-    def l3evpn_dci_update(self, context, uuid, values):
-        if 'uuid' in values:
-            msg = _("Cannot overwrite UUID for an existing L3 EVPN DCI.")
-            raise exception.InvalidParameterValue(err=msg)
-
-        try:
-            return self._do_update_l3evpn_dci(context, uuid, values)
-        except db_exc.DBDuplicateEntry as e:
-            if 'name' in e.columns:
-                raise exception.DuplicateDeviceName(name=values['name'])
-
-    def l3evpn_dci_create(self, context, values):
-        if not values.get('uuid'):
-            values['uuid'] = uuidutils.generate_uuid()
-
-        l3evpn_dci = models.L3EVPNDCI()
-        l3evpn_dci.update(values)
-
-        with _session_for_write() as session:
-            try:
-                session.add(l3evpn_dci)
-                session.flush()
-            except db_exc.DBDuplicateEntry:
-                raise exception.RecordAlreadyExists(uuid=values['uuid'])
-            return l3evpn_dci
-
-    @oslo_db_api.retry_on_deadlock
-    def _do_update_l3evpn_dci(self, context, uuid, values):
-        with _session_for_write():
-            query = model_query(context, models.L3EVPNDCI)
-            query = add_identity_filter(query, uuid)
-            try:
-                ref = query.with_for_update().one()
-            except NoResultFound:
-                raise exception.ResourceNotFound(
-                    resource='L3EVPNDCI',
-                    msg='with uuid=%s' % uuid)
-
-            ref.update(values)
-        return ref
-
-    @oslo_db_api.retry_on_deadlock
-    def l3evpn_dci_delete(self, context, uuid):
-        with _session_for_write():
-            query = model_query(context, models.L3EVPNDCI)
-            query = add_identity_filter(query, uuid)
-            count = query.delete()
-            if count != 1:
-                raise exception.ResourceNotFound(
-                    resource='L3EVPNDCI',
-                    msg='with uuid=%s' % uuid)
-
-    # l2evpn_dci
-    def l2evpn_dci_get(self, context, uuid):
-        query = model_query(
-            context,
-            models.L2EVPNDCI).filter_by(uuid=uuid)
-        try:
-            return query.one()
-        except NoResultFound:
-            raise exception.ResourceNotFound(
-                resource='L2EVPNDCI',
-                msg='with uuid=%s' % uuid)
-
-    def l2evpn_dci_list_by_filters(self, context, filters,
-                                   sort_key='created_at',
-                                   sort_dir='desc', limit=None,
-                                   marker=None, join_columns=None):
-        """Return L2 EVPN DCI that match all filters sorted by the given keys.
-        """
-
-        if limit == 0:
-            return []
-
-        query_prefix = model_query(context, models.L2EVPNDCI)
-        filters = copy.deepcopy(filters)
-
-        exact_match_filter_names = ['state',
-                                    'east_site_uuid',
-                                    'west_site_uuid']
-
-        # Filter the query
-        query_prefix = self._exact_filter(models.L2EVPNDCI, query_prefix,
-                                          filters, exact_match_filter_names)
-        if query_prefix is None:
-            return []
-        return _paginate_query(context, models.L2EVPNDCI, query_prefix,
-                               limit, marker, sort_key, sort_dir)
-
-    def l2evpn_dci_list(self, context, limit=None, marker=None, sort_key=None,
-                        sort_dir=None):
-        query = model_query(context, models.L2EVPNDCI)
-        return _paginate_query(context, models.L2EVPNDCI, query,
-                               limit, marker, sort_key, sort_dir)
-
-    def l2evpn_dci_update(self, context, uuid, values):
-        if 'uuid' in values:
-            msg = _("Cannot overwrite UUID for an existing L2 EVPN DCI.")
-            raise exception.InvalidParameterValue(err=msg)
-
-        try:
-            return self._do_update_l2evpn_dci(context, uuid, values)
-        except db_exc.DBDuplicateEntry as e:
-            if 'name' in e.columns:
-                raise exception.DuplicateDeviceName(name=values['name'])
-
-    def l2evpn_dci_create(self, context, values):
-        if not values.get('uuid'):
-            values['uuid'] = uuidutils.generate_uuid()
-
-        l2evpn_dci = models.L2EVPNDCI()
-        l2evpn_dci.update(values)
-
-        with _session_for_write() as session:
-            try:
-                session.add(l2evpn_dci)
-                session.flush()
-            except db_exc.DBDuplicateEntry:
-                raise exception.RecordAlreadyExists(uuid=values['uuid'])
-            return l2evpn_dci
-
-    @oslo_db_api.retry_on_deadlock
-    def _do_update_l2evpn_dci(self, context, uuid, values):
-        with _session_for_write():
-            query = model_query(context, models.L2EVPNDCI)
-            query = add_identity_filter(query, uuid)
-            try:
-                ref = query.with_for_update().one()
-            except NoResultFound:
-                raise exception.ResourceNotFound(
-                    resource='L2EVPNDCI',
-                    msg='with uuid=%s' % uuid)
-
-            ref.update(values)
-        return ref
-
-    @oslo_db_api.retry_on_deadlock
-    def l2evpn_dci_delete(self, context, uuid):
-        with _session_for_write():
-            query = model_query(context, models.L2EVPNDCI)
-            query = add_identity_filter(query, uuid)
-            count = query.delete()
-            if count != 1:
-                raise exception.ResourceNotFound(
-                    resource='L2EVPNDCI',
-                    msg='with uuid=%s' % uuid)
-
     # wan_nodes
     def wan_node_get(self, context, uuid):
         query = model_query(
@@ -496,30 +306,31 @@ class Connection(api.Connection):
                     resource='WANNode',
                     msg='with uuid=%s' % uuid)
 
-    # l3vpn_srv6_slicing
-    def l3vpn_srv6_slicing_get(self, context, uuid):
+    # evpn_vpls_over_srv6_be_slicing
+    def evpn_vpls_over_srv6_be_slicing_get(self, context, uuid):
         query = model_query(
             context,
-            models.L3VPNSRv6Slicing).filter_by(uuid=uuid)
+            models.EVPNVPLSoSRv6BESlicing).filter_by(uuid=uuid)
         try:
             return query.one()
         except NoResultFound:
             raise exception.ResourceNotFound(
-                resource='L3VPNSRv6Slicing',
+                resource='EVPNVPLSoSRv6BESlicing',
                 msg='with uuid=%s' % uuid)
 
-    def l3vpn_srv6_slicing_list_by_filters(self, context, filters,
-                                           sort_key='created_at',
-                                           sort_dir='desc', limit=None,
-                                           marker=None, join_columns=None):
-        """Return L3VPN over SRv6 network slicing that match all filters sorted
-        by the given keys.
+    def evpn_vpls_over_srv6_be_slicing_list_by_filters(self, context, filters,
+                                                       sort_key='created_at',
+                                                       sort_dir='desc',
+                                                       limit=None, marker=None,
+                                                       join_columns=None):
+        """Return EVPN VPLS over SRv6 BE network slicing that match all filters
+        sorted by the given keys.
         """
 
         if limit == 0:
             return []
 
-        query_prefix = model_query(context, models.L3VPNSRv6Slicing)
+        query_prefix = model_query(context, models.EVPNVPLSoSRv6BESlicing)
         filters = copy.deepcopy(filters)
 
         exact_match_filter_names = ['state',
@@ -528,68 +339,70 @@ class Connection(api.Connection):
 
         # Filter the query
         query_prefix = self._exact_filter(
-            models.L3VPNSRv6Slicing, query_prefix,
+            models.EVPNVPLSoSRv6BESlicing, query_prefix,
             filters, exact_match_filter_names)
         if query_prefix is None:
             return []
-        return _paginate_query(context, models.L3VPNSRv6Slicing, query_prefix,
+        return _paginate_query(context, models.EVPNVPLSoSRv6BESlicing,
+                               query_prefix, limit, marker, sort_key, sort_dir)
+
+    def evpn_vpls_over_srv6_be_slicing_list(self, context, limit=None,
+                                            marker=None, sort_key=None,
+                                            sort_dir=None):
+        query = model_query(context, models.EVPNVPLSoSRv6BESlicing)
+        return _paginate_query(context, models.EVPNVPLSoSRv6BESlicing, query,
                                limit, marker, sort_key, sort_dir)
 
-    def l3vpn_srv6_slicing_list(self, context, limit=None, marker=None,
-                                sort_key=None, sort_dir=None):
-        query = model_query(context, models.L3VPNSRv6Slicing)
-        return _paginate_query(context, models.L3VPNSRv6Slicing, query,
-                               limit, marker, sort_key, sort_dir)
-
-    def l3vpn_srv6_slicing_update(self, context, uuid, values):
+    def evpn_vpls_over_srv6_be_slicing_update(self, context, uuid, values):
         if 'uuid' in values:
             msg = _("Cannot overwrite UUID for an existing "
-                    "L3VPN over SRv6 network slicing.")
+                    "EVPN VPLS over SRv6 BE network slicing.")
             raise exception.InvalidParameterValue(err=msg)
 
         try:
-            return self._do_update_l3vpn_srv6_slicing(context, uuid, values)
+            return self._do_update_evpn_vpls_over_srv6_be_slicing(
+                context, uuid, values)
         except db_exc.DBDuplicateEntry as e:
             if 'name' in e.columns:
                 raise exception.DuplicateDeviceName(name=values['name'])
 
-    def l3vpn_srv6_slicing_create(self, context, values):
+    def evpn_vpls_over_srv6_be_slicing_create(self, context, values):
         if not values.get('uuid'):
             values['uuid'] = uuidutils.generate_uuid()
 
-        l3vpn_srv6_slicing = models.L3VPNSRv6Slicing()
-        l3vpn_srv6_slicing.update(values)
+        evpn_vpls_over_srv6_be_slicing = models.EVPNVPLSoSRv6BESlicing()
+        evpn_vpls_over_srv6_be_slicing.update(values)
 
         with _session_for_write() as session:
             try:
-                session.add(l3vpn_srv6_slicing)
+                session.add(evpn_vpls_over_srv6_be_slicing)
                 session.flush()
             except db_exc.DBDuplicateEntry:
                 raise exception.RecordAlreadyExists(uuid=values['uuid'])
-            return l3vpn_srv6_slicing
+            return evpn_vpls_over_srv6_be_slicing
 
     @oslo_db_api.retry_on_deadlock
-    def _do_update_l3vpn_srv6_slicing(self, context, uuid, values):
+    def _do_update_evpn_vpls_over_srv6_be_slicing(self, context, uuid, values):
         with _session_for_write():
-            query = model_query(context, models.L3VPNSRv6Slicing)
+            query = model_query(context, models.EVPNVPLSoSRv6BESlicing)
             query = add_identity_filter(query, uuid)
             try:
                 ref = query.with_for_update().one()
             except NoResultFound:
                 raise exception.ResourceNotFound(
-                    resource='L3VPNSRv6Slicing',
+                    resource='EVPNVPLSoSRv6BESlicing',
                     msg='with uuid=%s' % uuid)
 
             ref.update(values)
         return ref
 
     @oslo_db_api.retry_on_deadlock
-    def l3vpn_srv6_slicing_delete(self, context, uuid):
+    def evpn_vpls_over_srv6_be_slicing_delete(self, context, uuid):
         with _session_for_write():
-            query = model_query(context, models.L3VPNSRv6Slicing)
+            query = model_query(context, models.EVPNVPLSoSRv6BESlicing)
             query = add_identity_filter(query, uuid)
             count = query.delete()
             if count != 1:
                 raise exception.ResourceNotFound(
-                    resource='L3VPNSRv6Slicing',
+                    resource='EVPNVPLSoSRv6BESlicing',
                     msg='with uuid=%s' % uuid)
