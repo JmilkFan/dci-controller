@@ -30,14 +30,13 @@ class BaseDeviceDriver(object, metaclass=abc.ABCMeta):
 class SRv6VPNDeviceDriver(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def create_vpls_over_srv6_be_l2vpn(self):
+    def create_evpn_vpls_over_srv6_be_vpn(self):
+        return
+
+    @abc.abstractmethod
+    def delete_evpn_vpls_over_srv6_be_vpn(self):
         return
 
 
 class DeviceDriver(SRv6VPNDeviceDriver, BaseDeviceDriver):
-
-    def liveness(self):
-        raise NotImplementedError()
-
-    def create_vpls_over_srv6_be_l2vpn(self):
-        raise NotImplementedError()
+    pass

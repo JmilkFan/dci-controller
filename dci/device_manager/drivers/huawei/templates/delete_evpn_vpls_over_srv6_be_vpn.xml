@@ -11,30 +11,30 @@
       <bd xmlns="urn:huawei:yang:huawei-bd">
         <instances>
           <instance nc:operation="remove">
-            <id>11</id>
+            <id>{{ WAN_VPN_BD }}</id>
           </instance>
           <instance nc:operation="remove">
-            <id>26</id>
+            <id>{{ ACCESS_VPN_BD }}</id>
           </instance>
         </instances>
       </bd>
       <evpn xmlns="urn:huawei:yang:huawei-evpn">
         <instances>
           <instance nc:operation="remove">
-            <name>fgj_wan_vpn</name>
+            <name>{{ WAN_VPN_NAME }}</name>
           </instance>
           <instance nc:operation="remove">
-            <name>fgj_dcn_access_vpn</name>
+            <name>{{ ACCESS_VPN_NAME }}</name>
           </instance>
         </instances>
       </evpn>
       <ifm xmlns="urn:huawei:yang:huawei-ifm">
         <interfaces>
           <interface nc:operation="remove">
-            <name>GigabitEthernet0/2/8.11</name>
+            <name>{{ PRESET_WAN_VPN_BD_INTERFACE }}.{{ WAN_VPN_BD }}</name>
           </interface>
           <interface nc:operation="remove">
-            <name>GigabitEthernet0/2/9.26</name>
+            <name>{{ PRESET_ACCESS_VPN_BD_INTERFACE }}.{{ ACCESS_VPN_BD }}</name>
           </interface>
         </interfaces>
       </ifm>
@@ -69,8 +69,8 @@
       <nvo3 xmlns="urn:huawei:yang:huawei-nvo3">
         <vni-instances>
           <vni-instance nc:operation="remove">
-            <vni>26</vni>
-            <source-nve>Nve1</source-nve>
+            <vni>{{ ACCESS_VPN_BD }}</vni>
+            <source-nve>{{ PRESET_VXLAN_NVE_INTERFACE }}</source-nve>
           </vni-instance>
         </vni-instances>
       </nvo3>

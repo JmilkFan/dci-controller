@@ -43,7 +43,7 @@ class Controller(rest.RestController):
 
     sites = sites.SiteController()
     wan_nodes = wan_nodes.WANNodeController()
-    evpn_vpls_over_srv6_be_slicings = evpn_vpls_over_srv6_be_slicings.EVPNVPLSoSRv6SlicingController()  # noqa
+    evpn_vpls_over_srv6_be_slicings = evpn_vpls_over_srv6_be_slicings.EVPNVPLSoSRv6BESlicingController()  # noqa
     test_netconf = test_netconf.TestController()
 
     @expose.expose(V1)

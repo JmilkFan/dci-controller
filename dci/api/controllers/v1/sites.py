@@ -28,7 +28,7 @@ from dci.common import constants
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
 from dci import objects
-from dci.sdn_controller.tungsten_fabric import vnc_api_client as tf_vnc_api
+from dci.sdnc_manager import api as manager_api
 
 
 LOG = log.getLogger(__name__)
@@ -126,20 +126,12 @@ class SiteController(base.DCIController):
 
     def _ping_check(self, site):
 
-        # Ping TF VNC API
-        if site.get('tf_api_server_host'):
-            try:
-                tf_vnc_api.Client(site['tf_api_server_host'],
-                                  site['tf_api_server_port'],
-                                  site['tf_username'],
-                                  site['tf_password'],
-                                  site['os_project_name'])
-            except Exception as err:
-                # TODO(fanguiju): API response exception details and failure
-                # codes.
-                LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
-                              "site login informations %s."), site)
-                raise err
+        try:
+            manager_api.SDNCManager(site)
+        except Exception as err:
+            LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
+                          "site login informations %s."), site)
+            raise err
 
     @expose.expose(Site, wtypes.text)
     def get_one(self, uuid):
@@ -165,10 +157,11 @@ class SiteController(base.DCIController):
         obj_sites = objects.Site.list(context, filters=filters_dict)
         return SiteCollection.convert_with_links(obj_sites)
 
-    @expose.expose(Site, body=types.jsontype, status_code=HTTPStatus.CREATED)
+    @expose.expose(Site, body=Site, status_code=HTTPStatus.CREATED)
     def post(self, req_body):
         """Create one Site.
         """
+        req_body = req_body.as_dict()
         LOG.info(_LI("[sites: port] Request body = %s"), req_body)
         context = pecan.request.context
 
@@ -176,8 +169,6 @@ class SiteController(base.DCIController):
                                                    TF_DEFAULT_PROJECT)
         req_body['tf_api_server_port'] = req_body.get('tf_api_server_port',
                                                       TF_DEFAULT_PORT)
-        req_body['netconf_port'] = req_body.get('netconf_port',
-                                                NETCONF_OVER_SSH_DEFAULT_PORT)
         self._ping_check(req_body)
 
         req_body['state'] = constants.ACTIVE
@@ -185,11 +176,12 @@ class SiteController(base.DCIController):
         obj_site.create(context)
         return Site.convert_with_links(obj_site)
 
-    @expose.expose(Site, wtypes.text, body=types.jsontype,
+    @expose.expose(Site, wtypes.text, body=Site,
                    status_code=HTTPStatus.ACCEPTED)
     def put(self, uuid, req_body):
         """Update a Site.
         """
+        req_body = req_body.as_dict()
         LOG.info("[sites: put] Request body = %s", req_body)
         context = pecan.request.context
 

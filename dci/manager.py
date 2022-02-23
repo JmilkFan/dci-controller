@@ -12,110 +12,36 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log
-from oslo_utils import importutils
-
-from dci.common.i18n import _LE
+from dci.flows import create_evpn_vpls_over_srv6_be_slicing_flow
 
 
-LOG = log.getLogger(__name__)
+class NetworkSlicingManager(object):
 
-
-DEVICE_DRIVER_MAPPING = {
-    'huawei': 'dci.device_manager.drivers.huawei.netengine.NetEngineDriver',
-    # TODO(fanguiju): Juniper devices are not supported.
-    'juniper': 'dci.device_manager.drivers.juniper.junos.JunosDriver'
-}
-
-
-class DeviceManager(object):
-
-    def __init__(self, device_connection_info, *args, **kwargs):
-        """Constructor of WAN Manager.
-
-        :param device_connection_info:
-            e.g.
-            {
-              "vendor": "huawei",
-              "netconf_host": "192.168.30.2",
-              "netconf_port": 22,
-              "netconf_username": "yunshan",
-              "netconf_password": "Huawei@123",
-            }
-        """
-
-        self.device_handle = None
-        self._instantiate_wan_manager_handle(device_connection_info)
-
-    def _instantiate_wan_manager_handle(self, device_connection_info):
-        if not self.device_handle:
-            try:
-                device_vendor = device_connection_info['vendor']
-                device_driver = DEVICE_DRIVER_MAPPING[device_vendor]
-                self.driver_handle = importutils.import_object(
-                    device_driver,
-                    host=device_connection_info['netconf_host'],
-                    port=device_connection_info['netconf_port'],
-                    username=device_connection_info['netconf_username'],
-                    password=device_connection_info['netconf_password'])
-            except Exception as err:
-                LOG.error(_LE("Device driver instantiation failed, "
-                              "details %s"), err)
-                raise
-
-    def device_ping(self):
-        try:
-            self.driver_handle.liveness()
-        except Exception as err:
-            LOG.error(_LE("Failed to PING WAN Node NETCONF Server, "
-                          "details %s"), err)
-            raise err
-
-    def create_an_and_wan_evpn_vpls_over_srv6_be(self):
-        pass
-
-    def test_netconf(self):
-        return self.driver_handle.test_netconf()
-
-
-class DCIManager(DeviceManager):
-
-    def create_wan_evpn_vpls_over_srv6_be(self):
-        pass
-
-
-class DCAManager(DeviceManager):
-
-    def create_an_evpn_vxlan(self):
-        pass
-
-
-class DCNManager(object):
-
-    def __init__(self, sdnc_connection_info, *args, **kwargs):
-        self.sdnc_handle = None
-        self._instantiate_dcn_manager_handle(sdnc_connection_info)
-
-    def _instantiate_dcn_manager_handle(self, sdnc_connection_info):
-        if not self.sdnc_handle:
-            pass
-
-    def create_vn_evpn_vxlan(self):
-        pass
-
-
-class NetworkSlicingManager(DCNManager, DCAManager, DCIManager):
-
-    def __init__(self, device_connection_info, sdnc_connection_info, *args, **kwargs):  # noqa
+    def __init__(self, east_site, east_wan_node, west_site, west_wan_node,
+                 *args, **kwargs):
         """Load the driver from the one specified in args, or from flags.
-
-        :param device_connection_info: Connect to Router Device of WAN.
-        :param sdnc_connection_info: Connect to SDN Controller of DCN.
         """
-        super(DCIManager, self).__init__(
-            device_connection_info=device_connection_info,
-            sdnc_connection_info=sdnc_connection_info,
-            *args, **kwargs)
+        self.east_site = east_site
+        self.east_wan_node = east_wan_node
+        self.west_site = west_site
+        self.west_wan_node = west_wan_node
 
-    def create_vpls_over_srv6_be_l2vpn_slicing(self):
+    def create_evpn_vpls_over_srv6_be_slicing(self, subnet_cidr,
+                                              east_site_subnet_ip_pool,
+                                              west_site_subnet_ip_pool):
+        slicing_configuration = {
+            'subnet_cidr': subnet_cidr,
+            'east_site': self.east_site,
+            'east_wan_node': self.east_wan_node,
+            'east_site_subnet_ip_pool': east_site_subnet_ip_pool,
+            'west_site': self.west_site,
+            'west_wan_node': self.west_wan_node,
+            'west_site_subnet_ip_pool': west_site_subnet_ip_pool
+        }
+
+        flow_engine = create_evpn_vpls_over_srv6_be_slicing_flow.get_flow(
+            store=slicing_configuration)
+        flow_engine.run()
+
+    def delete_evpn_vpls_over_srv6_be_slicing(self):
         pass

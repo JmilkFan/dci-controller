@@ -28,7 +28,7 @@ from dci.common import constants
 from dci.common import exception
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
-from dci import manager
+from dci.device_manager import api as manager_api
 from dci import objects
 
 
@@ -131,11 +131,12 @@ class WANNodeController(base.DCIController):
         obj_wan_nodes = objects.WANNode.list(context, filters=filters_dict)
         return WANNodeCollection.convert_with_links(obj_wan_nodes)
 
-    @expose.expose(WANNode, body=types.jsontype,
+    @expose.expose(WANNode, body=WANNode,
                    status_code=HTTPStatus.CREATED)
     def post(self, req_body):
         """Create one WANNode.
         """
+        req_body = req_body.as_dict()
         LOG.info(_LI("[wan_nodes: port] Request body = %s"), req_body)
         context = pecan.request.context
 
@@ -148,7 +149,7 @@ class WANNodeController(base.DCIController):
             LOG.error(msg)
             raise exception.InvalidRequestBody(msg)
 
-        dev_manager = manager.DeviceManager(device_connection_info=req_body)  # noqa
+        dev_manager = manager_api.DeviceManager(device_conn_ref=req_body)
         dev_manager.device_ping()
 
         req_body['state'] = constants.ACTIVE
@@ -156,11 +157,12 @@ class WANNodeController(base.DCIController):
         obj_wan_node.create(context)
         return WANNode.convert_with_links(obj_wan_node)
 
-    @expose.expose(WANNode, wtypes.text, body=types.jsontype,
+    @expose.expose(WANNode, wtypes.text, body=WANNode,
                    status_code=HTTPStatus.ACCEPTED)
     def put(self, uuid, req_body):
         """Update a WANNode.
         """
+        req_body = req_body.as_dict()
         LOG.info("[wan_nodes: put] Request body = %s", req_body)
         context = pecan.request.context
 

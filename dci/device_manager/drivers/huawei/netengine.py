@@ -76,10 +76,68 @@ class NetEngineDriver(DeviceDriver):
         rpc_command = self._get_rpc_command_from_template_file(file_name)
         self._send_rpc_command_to_device(rpc_command)
 
-    def create_vpls_over_srv6_be_l2vpn(self):
-        pass
-
     def test_netconf(self):
         file_name = 'test.xml'
         rpc_command = self._get_rpc_command_from_template_file(file_name)
+        return self._send_rpc_command_to_device(rpc_command)
+
+    def create_evpn_vpls_over_srv6_be_vpn(
+            self, wan_vpn_name, wan_vpn_rd, wan_vpn_rt,
+            preset_srv6_locator_arg, preset_srv6_locator, access_vpn_name,
+            access_vpn_rd, access_vpn_rt, access_vpn_vxlan_vni,
+            preset_vxlan_nve_intf, preset_vxlan_nve_intf_ipaddr,
+            preset_tf_control_node_ipaddr, splicing_vlan_id, wan_vpn_bd,
+            preset_wan_vpn_bd_intf, access_vpn_id, preset_access_vpn_bd_intf):
+        file_name = 'create_evpn_vpls_over_srv6_be_vpn.xml'
+        kwargs = {
+            # WAN VPN
+            'WAN_VPN_NAME': wan_vpn_name,
+            'WAN_VPN_RD': wan_vpn_rd,
+            'WAN_VPN_RT': wan_vpn_rt,
+            'PRESET_SRV6_LOCATOR_ARG': preset_srv6_locator_arg,
+            'PRESET_SRV6_LOCATOR': preset_srv6_locator,
+
+            # ACCESS VPN
+            'ACCESS_VPN_NAME': access_vpn_name,
+            'ACCESS_VPN_RD': access_vpn_rd,
+            'ACCESS_VPN_RT': access_vpn_rt,
+            'ACCESS_VPN_VXLAN_VNI': access_vpn_vxlan_vni,
+            'PRESET_VXLAN_NVE_INTERFACE': preset_vxlan_nve_intf,
+            'PRESET_VXLAN_NVE_INTERFACE_IP_ADDRESS': preset_vxlan_nve_intf_ipaddr,  # noqa
+            'PRESET_TF_CONTROL_NODE_IP_ADDRESS': preset_tf_control_node_ipaddr,
+
+            # VPN Splicing
+            'SPLICING_VID': splicing_vlan_id,
+            'WAN_VPN_BD': wan_vpn_bd,
+            'PRESET_WAN_VPN_BD_INTERFACE': preset_wan_vpn_bd_intf,
+            'ACCESS_VPN_BD': access_vpn_id,
+            'PRESET_ACCESS_VPN_BD_INTERFACE': preset_access_vpn_bd_intf
+        }
+        rpc_command = self._get_rpc_command_from_template_file(file_name,
+                                                               kwargs)
+        return self._send_rpc_command_to_device(rpc_command)
+
+    def delete_evpn_vpls_over_srv6_be_vpn(
+            self, wan_vpn_name, access_vpn_name, access_vpn_vxlan_vni,
+            preset_vxlan_nve_intf, preset_vxlan_nve_intf_ipaddr,
+            preset_tf_control_node_ipaddr, wan_vpn_bd, preset_wan_vpn_bd_intf,
+            access_vpn_id, preset_access_vpn_bd_intf):
+        file_name = 'delete_evpn_vpls_over_srv6_be_vpn.xml'
+        kwargs = {
+            # WAN VPN
+            'WAN_VPN_NAME': wan_vpn_name,
+
+            # ACCESS VPN
+            'ACCESS_VPN_NAME': access_vpn_name,
+            'ACCESS_VPN_VXLAN_VNI': access_vpn_vxlan_vni,
+            'PRESET_VXLAN_NVE_INTERFACE': preset_vxlan_nve_intf,
+
+            # VPN Splicing
+            'WAN_VPN_BD': wan_vpn_bd,
+            'PRESET_WAN_VPN_BD_INTERFACE': preset_wan_vpn_bd_intf,
+            'ACCESS_VPN_BD': access_vpn_id,
+            'PRESET_ACCESS_VPN_BD_INTERFACE': preset_access_vpn_bd_intf
+        }
+        rpc_command = self._get_rpc_command_from_template_file(file_name,
+                                                               kwargs)
         return self._send_rpc_command_to_device(rpc_command)

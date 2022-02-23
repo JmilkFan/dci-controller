@@ -28,6 +28,7 @@ from dci.common import constants
 from dci.common import exception
 from dci.common.i18n import _LI
 from dci import objects
+from dci.manager import NetworkSlicingManager
 
 
 LOG = log.getLogger(__name__)
@@ -147,20 +148,6 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
             objects.EVPNVPLSoSRv6BESlicing.list(context, filters=filters_dict)
         return EVPNVPLSoSRv6BESlicingCollection.convert_with_links(obj_evpn_vpls_over_srv6_be_slicings)  # noqa
 
-    @expose.expose(EVPNVPLSoSRv6BESlicing, body=types.jsontype,
-                   status_code=HTTPStatus.CREATED)
-    def post(self, req_body):
-        """Create one EVPN VPLS over SRv6 BE network slicing.
-        """
-        LOG.info(_LI("[evpn_vpls_over_srv6_be_slicings: port] Request "
-                     "body = %s"), req_body)
-        context = pecan.request.context
-
-        req_body['state'] = constants.ACTIVE
-        obj_evpn_vpls_over_srv6_be_slicing = objects.EVPNVPLSoSRv6BESlicing(context, **req_body)  # noqa
-        obj_evpn_vpls_over_srv6_be_slicing.create(context)
-        return EVPNVPLSoSRv6BESlicing.convert_with_links(obj_evpn_vpls_over_srv6_be_slicing)  # noqa
-
     @expose.expose(EVPNVPLSoSRv6BESlicing, wtypes.text, body=types.jsontype,
                    status_code=HTTPStatus.ACCEPTED)
     def put(self, uuid, req_body):
@@ -169,6 +156,46 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
         raise exception.CapabilityNotSupported(
             "EVPN VPLS over SRv6 BE network slicing Update operation "
             "is not supported.")
+
+    @expose.expose(EVPNVPLSoSRv6BESlicing, body=EVPNVPLSoSRv6BESlicing,
+                   status_code=HTTPStatus.CREATED)
+    def post(self, req_body):
+        """Create one EVPN VPLS over SRv6 BE network slicing.
+        """
+        req_body = req_body.as_dict()
+        LOG.info(_LI("[evpn_vpls_over_srv6_be_slicings: port] Request "
+                     "body = %s"), req_body)
+        context = pecan.request.context
+
+        try:
+            obj_east_site = objects.Site.get(
+                context, uuid=req_body.get('east_site_uuid'))
+            obj_west_site = objects.Site.get(
+                context, uuid=req_body.get('west_site_uuid'))
+
+            obj_east_wan_node = objects.WANNode.get(
+                context, uuid=req_body.get('east_wan_node_uuid'))
+            obj_west_wan_node = objects.WANNode.get(
+                context, uuid=req_body.get('west_wan_node_uuid'))
+        except Exception as err:
+            raise err
+
+        subnet_cidr = req_body.get('subnet_cidr')
+        east_site_subnet_ip_pool = req_body.get('east_site_subnet_allocation_pool')  # noqa
+        west_site_subnet_ip_pool = req_body.get('west_site_subnet_allocation_pool')  # noqa
+
+        manager = NetworkSlicingManager(obj_east_site.as_dict(),
+                                        obj_east_wan_node.as_dict(),
+                                        obj_west_site.as_dict(),
+                                        obj_west_wan_node.as_dict())
+
+        manager.create_evpn_vpls_over_srv6_be_slicing(
+            subnet_cidr, east_site_subnet_ip_pool, west_site_subnet_ip_pool)
+
+        req_body['state'] = constants.ACTIVE
+        obj_evpn_vpls_over_srv6_be_slicing = objects.EVPNVPLSoSRv6BESlicing(context, **req_body)  # noqa
+        obj_evpn_vpls_over_srv6_be_slicing.create(context)
+        return EVPNVPLSoSRv6BESlicing.convert_with_links(obj_evpn_vpls_over_srv6_be_slicing)  # noqa
 
     @expose.expose(None, wtypes.text, status_code=HTTPStatus.NO_CONTENT)
     def delete(self, uuid):

@@ -57,44 +57,44 @@ class Connection(object, metaclass=abc.ABCMeta):
     def site_delete(self, context, uuid):
         """delete a DCI site."""
 
-    # l3evpn_dcis
+    # wan_nodes
     @abc.abstractmethod
-    def l3evpn_dci_create(self, context, values):
-        """Create a new L3 EVPN DCI."""
+    def wan_node_create(self, context, values):
+        """Create a new WAN node."""
 
     @abc.abstractmethod
-    def l3evpn_dci_get(self, context, uuid):
-        """Get a L3 EVPN DCI."""
+    def wan_node_get(self, context, uuid):
+        """Get a WAN node."""
 
     @abc.abstractmethod
-    def l3evpn_dci_list(self, context):
-        """Get all L3 EVPN DCI."""
+    def wan_node_list(self, context):
+        """Get all WAN node."""
 
     @abc.abstractmethod
-    def l3evpn_dci_update(self, context, uuid, values):
-        """update a L3 EVPN DCI."""
+    def wan_node_update(self, context, uuid, values):
+        """update a WAN node."""
 
     @abc.abstractmethod
-    def l3evpn_dci_delete(self, context, uuid):
-        """delete a L3 EVPN DCI."""
+    def wan_node_delete(self, context, uuid):
+        """delete a WAN node."""
 
-    # l2evpn_dcis
+    # evpn_vpls_over_srv6_be_slicings
     @abc.abstractmethod
-    def l2evpn_dci_create(self, context, values):
-        """Create a new L2 EVPN DCI."""
-
-    @abc.abstractmethod
-    def l2evpn_dci_get(self, context, uuid):
-        """Get a L2 EVPN DCI."""
+    def evpn_vpls_over_srv6_be_slicing_create(self, context, values):
+        """Create a new EVPN VPLS over SRv6 BE network slicing."""
 
     @abc.abstractmethod
-    def l2evpn_dci_list(self, context):
-        """Get all L2 EVPN DCI."""
+    def evpn_vpls_over_srv6_be_slicing_get(self, context, uuid):
+        """Get a EVPN VPLS over SRv6 BE network slicing."""
 
     @abc.abstractmethod
-    def l2evpn_dci_update(self, context, uuid, values):
-        """update a L2 EVPN DCI."""
+    def evpn_vpls_over_srv6_be_slicing_list(self, context):
+        """Get all EVPN VPLS over SRv6 BE network slicing."""
 
     @abc.abstractmethod
-    def l2evpn_dci_delete(self, context, uuid):
-        """delete a L2 EVPN DCI."""
+    def evpn_vpls_over_srv6_be_slicing_update(self, context, uuid, values):
+        """update a EVPN VPLS over SRv6 BE network slicing."""
+
+    @abc.abstractmethod
+    def evpn_vpls_over_srv6_be_slicing_delete(self, context, uuid):
+        """delete a WAN node."""

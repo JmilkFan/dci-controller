@@ -23,7 +23,7 @@ from dci.api.controllers import base
 from dci.api.controllers import types
 from dci.api import expose
 from dci.common.i18n import _LI
-from dci.manager import DeviceManager
+from dci.device_manager import api as manager_api
 from dci import objects
 
 
@@ -53,5 +53,6 @@ class TestController(base.DCIController):
             'netconf_password': obj_wan_node.netconf_password
         }
 
-        wan_manager = DeviceManager(device_connection_info)
-        return wan_manager.test_netconf()
+        device_manager = manager_api.DeviceManager(
+            device_conn_ref=device_connection_info)
+        return device_manager.test_netconf()
