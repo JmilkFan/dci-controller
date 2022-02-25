@@ -28,7 +28,7 @@ from dci.common import constants
 from dci.common import exception
 from dci.common.i18n import _LI
 from dci import objects
-from dci.manager import NetworkSlicingManager
+from dci.task_flows import flows
 
 
 LOG = log.getLogger(__name__)
@@ -184,13 +184,13 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
         east_site_subnet_ip_pool = req_body.get('east_site_subnet_allocation_pool')  # noqa
         west_site_subnet_ip_pool = req_body.get('west_site_subnet_allocation_pool')  # noqa
 
-        manager = NetworkSlicingManager(obj_east_site.as_dict(),
-                                        obj_east_wan_node.as_dict(),
-                                        obj_west_site.as_dict(),
-                                        obj_west_wan_node.as_dict())
+        slicing_name = req_body.get('name')
 
-        manager.create_evpn_vpls_over_srv6_be_slicing(
-            subnet_cidr, east_site_subnet_ip_pool, west_site_subnet_ip_pool)
+        flows.execute_l2vpn_slicing_flow(subnet_cidr, slicing_name,
+                                         obj_east_site, obj_east_wan_node,
+                                         obj_west_site, obj_west_wan_node,
+                                         east_site_subnet_ip_pool,
+                                         west_site_subnet_ip_pool)
 
         req_body['state'] = constants.ACTIVE
         obj_evpn_vpls_over_srv6_be_slicing = objects.EVPNVPLSoSRv6BESlicing(context, **req_body)  # noqa

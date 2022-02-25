@@ -68,11 +68,3 @@ class DeviceManager(object):
 
     def test_netconf(self):
         return self.driver_handle.test_netconf()
-
-    def create_evpn_vpls_over_srv6_be_vpn(self, vpn_configuration):
-        return self.driver_handle.\
-            create_evpn_vpls_over_srv6_be_vpn(**vpn_configuration)
-
-    def delete_evpn_vpls_over_srv6_be_vpn(self, vpn_configuration):
-        return self.driver_handle.\
-            delete_evpn_vpls_over_srv6_be_vpn(**vpn_configuration)

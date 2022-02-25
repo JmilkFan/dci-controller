@@ -12,15 +12,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import dci.conf
-
-CONF = dci.conf.CONF
+import random
 
 
-def mock_return_true(func):
-    def return_true(*args, **kwargs):
-        return True
+def generate_route_target():
+    return "12345:%s" % random.sample('0123456789', 5)
 
-    if CONF.api.enable_mock_for_qa:
-        return return_true
-    return func
+
+def generate_random_route_target():
+    return "54321:%s" % random.sample('0123456789', 5)
+
+
+def generate_random_bridge_domain():
+    return str(random.randint(3, 4095))
+
+
+def generate_random_vlan_id():
+    return str(random.randint(3, 4095))

@@ -12,36 +12,90 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from dci.flows import create_evpn_vpls_over_srv6_be_slicing_flow
+from dci.common import constants
+from dci.device_manager.drivers.huawei import netengine
+from dci.sdnc_manager.tungsten_fabric import vnc_api_client as tf_vnc_api
 
 
 class NetworkSlicingManager(object):
 
     def __init__(self, east_site, east_wan_node, west_site, west_wan_node,
-                 *args, **kwargs):
-        """Load the driver from the one specified in args, or from flags.
-        """
+                 slicing_name):
         self.east_site = east_site
         self.east_wan_node = east_wan_node
+        self.east_sdnc_mgr = self._get_sdnc_mgr(east_site)
+        self.east_dev_mgr = self._get_dev_mgr(east_wan_node)
+
         self.west_site = west_site
         self.west_wan_node = west_wan_node
+        self.west_sdnc_mgr = self._get_sdnc_mgr(west_site)
+        self.west_dev_mgr = self._get_dev_mgr(west_wan_node)
 
-    def create_evpn_vpls_over_srv6_be_slicing(self, subnet_cidr,
-                                              east_site_subnet_ip_pool,
-                                              west_site_subnet_ip_pool):
-        slicing_configuration = {
-            'subnet_cidr': subnet_cidr,
-            'east_site': self.east_site,
-            'east_wan_node': self.east_wan_node,
-            'east_site_subnet_ip_pool': east_site_subnet_ip_pool,
-            'west_site': self.west_site,
-            'west_wan_node': self.west_wan_node,
-            'west_site_subnet_ip_pool': west_site_subnet_ip_pool
-        }
+        self.vn_name = constants.VN_NAME_PREFIX + slicing_name
+        self.wan_vpn_name = constants.WAN_VPN_NAME_PREFIX + slicing_name
+        self.access_vpn_name = constants.ACCESS_VPN_NAME_PREFIX + slicing_name
 
-        flow_engine = create_evpn_vpls_over_srv6_be_slicing_flow.get_flow(
-            store=slicing_configuration)
-        flow_engine.run()
+    def _get_sdnc_mgr(self, site):
+        return tf_vnc_api.Client(
+            host=site.tf_api_server_host,
+            port=site.tf_api_server_port,
+            username=site.tf_username,
+            password=site.tf_password,
+            project=site.os_project_name)
 
-    def delete_evpn_vpls_over_srv6_be_slicing(self):
-        pass
+    def _get_dev_mgr(self, wan_node):
+        return netengine.NetEngineDriver(
+            host=wan_node.netconf_host,
+            port=wan_node.netconf_port,
+            username=wan_node.netconf_username,
+            password=wan_node.netconf_password)
+
+    def create_evpn_vxlan_dcn(self, sdnc_mgr, subnet_cidr,
+                              subnet_allocation_pool, route_target):
+        vn_uuid = sdnc_mgr.create_virtal_network_with_user_defined_subnet(
+            self.vn_name, subnet_cidr, subnet_allocation_pool, route_target)
+        vn_vni = sdnc_mgr.get_virtual_network_vni(vn_uuid)
+        return vn_vni
+
+    def delete_evpn_vxlan_dcn(self, sdnc_mgr):
+        sdnc_mgr.delete_virtual_network(self.vn_name)
+
+    def create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
+            self, dev_mgr,
+            wan_vpn_rd, wan_vpn_rt, wan_vpn_bd,
+            access_vpn_rd, access_vpn_rt, access_vpn_bd,
+            access_vpn_vxlan_vni, splicing_vlan_id):
+        dev_mgr.create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
+            wan_vpn_name=self.wan_vpn_name,
+            wan_vpn_rd=wan_vpn_rd,
+            wan_vpn_rt=wan_vpn_rt,
+            preset_srv6_locator_arg=self.wan_node.preset_srv6_locator_arg,
+            preset_srv6_locator=self.wan_node.preset_srv6_locator,
+            access_vpn_name=self.access_vpn_name,
+            access_vpn_rd=access_vpn_rd,
+            access_vpn_rt=access_vpn_rt,
+            access_vpn_vxlan_vni=access_vpn_vxlan_vni,
+            preset_vxlan_nve_intf=self.wan_node.preset_vxlan_nve_intf,
+            preset_vxlan_nve_intf_ipaddr=self.wan_node.preset_vxlan_nve_intf_ipaddr,  # noqa
+            preset_vxlan_nve_peer_ipaddr=self.wan_node.preset_vxlan_nve_peer_ipaddr,  # noqa
+            splicing_vlan_id=splicing_vlan_id,
+            wan_vpn_bd=wan_vpn_bd,
+            preset_wan_vpn_bd_intf=self.wan_node.preset_wan_vpn_bd_intf,
+            access_vpn_bd=access_vpn_bd,
+            preset_access_vpn_bd_intf=self.wan_node.preset_access_vpn_bd_intf
+        )
+
+    def delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
+            self, dev_mgr, access_vpn_vxlan_vni, wan_vpn_bd, access_vpn_bd):
+        dev_mgr.delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
+            wan_vpn_name=self.wan_vpn_name,
+            access_vpn_name=self.access_vpn_name,
+            access_vpn_vxlan_vni=access_vpn_vxlan_vni,
+            preset_vxlan_nve_intf=self.wan_node.preset_vxlan_nve_intf,
+            preset_vxlan_nve_intf_ipaddr=self.wan_node.preset_vxlan_nve_intf_ipaddr,  # noqa
+            preset_tf_control_node_ipaddr=self.wan_node.preset_tf_control_node_ipaddr,  # noqa
+            wan_vpn_bd=wan_vpn_bd,
+            preset_wan_vpn_bd_intf=self.wan_node.preset_wan_vpn_bd_intf,
+            access_vpn_bd=access_vpn_bd,
+            preset_access_vpn_bd_intf=self.wan_node.preset_access_vpn_bd_intf
+        )

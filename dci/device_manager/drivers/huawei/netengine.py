@@ -81,14 +81,18 @@ class NetEngineDriver(DeviceDriver):
         rpc_command = self._get_rpc_command_from_template_file(file_name)
         return self._send_rpc_command_to_device(rpc_command)
 
-    def create_evpn_vpls_over_srv6_be_vpn(
+    def create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             self, wan_vpn_name, wan_vpn_rd, wan_vpn_rt,
             preset_srv6_locator_arg, preset_srv6_locator, access_vpn_name,
             access_vpn_rd, access_vpn_rt, access_vpn_vxlan_vni,
             preset_vxlan_nve_intf, preset_vxlan_nve_intf_ipaddr,
-            preset_tf_control_node_ipaddr, splicing_vlan_id, wan_vpn_bd,
-            preset_wan_vpn_bd_intf, access_vpn_id, preset_access_vpn_bd_intf):
-        file_name = 'create_evpn_vpls_over_srv6_be_vpn.xml'
+            preset_vxlan_nve_peer_ipaddr, splicing_vlan_id, wan_vpn_bd,
+            preset_wan_vpn_bd_intf, access_vpn_bd, preset_access_vpn_bd_intf,
+            *args, **kwargs):
+        """Create EVPN VPLS over SRv6 BE WAN VPN and EVPN VxLAN Access VPN at
+        the same time.
+        """
+        file_name = 'create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn.xml'  # noqa
         kwargs = {
             # WAN VPN
             'WAN_VPN_NAME': wan_vpn_name,
@@ -104,25 +108,28 @@ class NetEngineDriver(DeviceDriver):
             'ACCESS_VPN_VXLAN_VNI': access_vpn_vxlan_vni,
             'PRESET_VXLAN_NVE_INTERFACE': preset_vxlan_nve_intf,
             'PRESET_VXLAN_NVE_INTERFACE_IP_ADDRESS': preset_vxlan_nve_intf_ipaddr,  # noqa
-            'PRESET_TF_CONTROL_NODE_IP_ADDRESS': preset_tf_control_node_ipaddr,
+            'PRESET_VXLAN_NVE_PEER_IP_ADDRESS': preset_vxlan_nve_peer_ipaddr,
 
             # VPN Splicing
             'SPLICING_VID': splicing_vlan_id,
             'WAN_VPN_BD': wan_vpn_bd,
             'PRESET_WAN_VPN_BD_INTERFACE': preset_wan_vpn_bd_intf,
-            'ACCESS_VPN_BD': access_vpn_id,
+            'ACCESS_VPN_BD': access_vpn_bd,
             'PRESET_ACCESS_VPN_BD_INTERFACE': preset_access_vpn_bd_intf
         }
         rpc_command = self._get_rpc_command_from_template_file(file_name,
                                                                kwargs)
         return self._send_rpc_command_to_device(rpc_command)
 
-    def delete_evpn_vpls_over_srv6_be_vpn(
+    def delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             self, wan_vpn_name, access_vpn_name, access_vpn_vxlan_vni,
             preset_vxlan_nve_intf, preset_vxlan_nve_intf_ipaddr,
             preset_tf_control_node_ipaddr, wan_vpn_bd, preset_wan_vpn_bd_intf,
-            access_vpn_id, preset_access_vpn_bd_intf):
-        file_name = 'delete_evpn_vpls_over_srv6_be_vpn.xml'
+            access_vpn_bd, preset_access_vpn_bd_intf, *args, **kwargs):
+        """Delete EVPN VPLS over SRv6 BE WAN VPN and EVPN VxLAN Access VPN at
+        the same time.
+        """
+        file_name = 'delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn.xml'  # noqa
         kwargs = {
             # WAN VPN
             'WAN_VPN_NAME': wan_vpn_name,
@@ -135,7 +142,7 @@ class NetEngineDriver(DeviceDriver):
             # VPN Splicing
             'WAN_VPN_BD': wan_vpn_bd,
             'PRESET_WAN_VPN_BD_INTERFACE': preset_wan_vpn_bd_intf,
-            'ACCESS_VPN_BD': access_vpn_id,
+            'ACCESS_VPN_BD': access_vpn_bd,
             'PRESET_ACCESS_VPN_BD_INTERFACE': preset_access_vpn_bd_intf
         }
         rpc_command = self._get_rpc_command_from_template_file(file_name,

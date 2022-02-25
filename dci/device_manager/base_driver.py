@@ -26,16 +26,13 @@ class BaseDeviceDriver(object, metaclass=abc.ABCMeta):
         """
         return
 
+    @abc.abstractmethod
+    def test_netconf(self):
+        return
+
 
 class SRv6VPNDeviceDriver(object, metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def create_evpn_vpls_over_srv6_be_vpn(self):
-        return
-
-    @abc.abstractmethod
-    def delete_evpn_vpls_over_srv6_be_vpn(self):
-        return
+    pass
 
 
 class DeviceDriver(SRv6VPNDeviceDriver, BaseDeviceDriver):
