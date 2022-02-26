@@ -70,11 +70,7 @@ class NetworkSlicingManager(object):
             wan_vpn_rd=wan_vpn_rd,
             wan_vpn_rt=wan_vpn_rt,
             preset_srv6_locator_arg=wan_node.preset_evpn_vpls_o_srv6_be_locator_arg,  # noqa
-            preset_srv6_locator_arg_prefix=wan_node.preset_srv6_locator_arg_prefix,  # noqa
-            preset_srv6_locator_arg_prefix_len=wan_node.preset_srv6_locator_arg_prefix_len,  # noqa
             preset_srv6_locator=wan_node.preset_evpn_vpls_o_srv6_be_locator,
-            preset_srv6_locator_prefix=wan_node.preset_srv6_locator_prefix,
-            preset_srv6_locator_prefix_len=wan_node.preset_srv6_locator_prefix_len,  # noqa
             access_vpn_name=self.access_vpn_name,
             access_vpn_rd=access_vpn_rd,
             access_vpn_rt=access_vpn_rt,

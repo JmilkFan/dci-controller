@@ -27,6 +27,7 @@ from dci.api import expose
 from dci.common import constants
 from dci.common import exception
 from dci.common.i18n import _LI
+from dci import manager
 from dci import objects
 from dci.task_flows import flows
 
@@ -78,9 +79,9 @@ class EVPNVPLSoSRv6BESlicing(base.APIBase):
             setattr(self, field, kwargs.get(field, wtypes.Unset))
 
     @classmethod
-    def convert_with_links(cls, obj_evpn_vpls_over_srv6_be_slicing):
+    def convert_with_links(cls, obj_slicing):
         api_evpn_vpls_over_srv6_be_slicing = \
-            cls(**obj_evpn_vpls_over_srv6_be_slicing.as_dict())
+            cls(**obj_slicing.as_dict())
         api_evpn_vpls_over_srv6_be_slicing.links = [
             link.Link.make_link('self', pecan.request.public_url,
                                 'evpn_vpls_over_srv6_be_slicings',
@@ -119,8 +120,8 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
         """
         LOG.info(_LI("[evpn_vpls_over_srv6_be_slicings: get_one] UUID = %s"), uuid)  # noqa
         context = pecan.request.context
-        obj_evpn_vpls_over_srv6_be_slicing = objects.EVPNVPLSoSRv6BESlicing.get(context, uuid)  # noqa
-        return EVPNVPLSoSRv6BESlicing.convert_with_links(obj_evpn_vpls_over_srv6_be_slicing)  # noqa
+        obj_slicing = objects.EVPNVPLSoSRv6BESlicing.get(context, uuid)  # noqa
+        return EVPNVPLSoSRv6BESlicing.convert_with_links(obj_slicing)  # noqa
 
     @expose.expose(EVPNVPLSoSRv6BESlicingCollection, wtypes.text,
                    wtypes.text, wtypes.text, status_code=HTTPStatus.OK)
@@ -138,9 +139,9 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
                      "filters = %s"), filters_dict)
 
         context = pecan.request.context
-        obj_evpn_vpls_over_srv6_be_slicings = \
+        obj_slicings = \
             objects.EVPNVPLSoSRv6BESlicing.list(context, filters=filters_dict)
-        return EVPNVPLSoSRv6BESlicingCollection.convert_with_links(obj_evpn_vpls_over_srv6_be_slicings)  # noqa
+        return EVPNVPLSoSRv6BESlicingCollection.convert_with_links(obj_slicings)  # noqa
 
     @expose.expose(EVPNVPLSoSRv6BESlicing, wtypes.text, body=types.jsontype,
                    status_code=HTTPStatus.ACCEPTED)
@@ -175,7 +176,7 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
         if not obj_east_site.wan_nodes[0] or not obj_west_site.wan_nodes[0]:
             raise
 
-        flow_store = flows.execute_l2vpn_slicing_flow(
+        flow_store = flows.execute_create_l2vpn_slicing_flow(
             obj_east_site, obj_west_site,
             req_body.get('subnet_cidr'),
             req_body.get('name'),
@@ -208,9 +209,9 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
 
         req_body['state'] = constants.ACTIVE
 
-        obj_evpn_vpls_over_srv6_be_slicing = objects.EVPNVPLSoSRv6BESlicing(context, **req_body)  # noqa
-        obj_evpn_vpls_over_srv6_be_slicing.create(context)
-        return EVPNVPLSoSRv6BESlicing.convert_with_links(obj_evpn_vpls_over_srv6_be_slicing)  # noqa
+        obj_slicing = objects.EVPNVPLSoSRv6BESlicing(context, **req_body)  # noqa
+        obj_slicing.create(context)
+        return EVPNVPLSoSRv6BESlicing.convert_with_links(obj_slicing)  # noqa
 
     @expose.expose(None, wtypes.text, status_code=HTTPStatus.NO_CONTENT)
     def delete(self, uuid):
@@ -220,5 +221,37 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
         """
         context = pecan.request.context
         LOG.info(_LI('[evpn_vpls_over_srv6_be_slicing: delete] UUID = %s'), uuid)  # noqa
-        obj_evpn_vpls_over_srv6_be_slicing = objects.EVPNVPLSoSRv6BESlicing.get(context, uuid)  # noqa
-        obj_evpn_vpls_over_srv6_be_slicing.destroy(context)
+        obj_slicing = objects.EVPNVPLSoSRv6BESlicing.get(context, uuid)  # noqa
+
+        east_site_uuid = obj_slicing.east_site_uuid
+        west_site_uuid = obj_slicing.west_site_uuid
+
+        try:
+            obj_east_site = objects.Site.get(context, uuid=east_site_uuid)
+            obj_west_site = objects.Site.get(context, uuid=west_site_uuid)
+        except exception.ResourceNotFound as err:
+            raise err
+        except Exception as err:
+            raise err
+
+        ns_mgr = manager.NetworkSlicingManager(
+            obj_east_site,
+            obj_west_site,
+            obj_slicing.name)
+
+        ns_mgr.delete_evpn_vxlan_dcn(ns_mgr.east_sdnc_mgr)
+        ns_mgr.delete_evpn_vxlan_dcn(ns_mgr.west_sdnc_mgr)
+
+        ns_mgr.delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
+            ns_mgr.east_dev_mgr, ns_mgr.obj_east_wan_node,
+            wan_vpn_bd=obj_slicing.east_wan_vpn_bridge_domain,
+            access_vpn_bd=obj_slicing.east_access_vpn_bridge_domain,
+            access_vpn_vxlan_vni=obj_slicing.east_access_vpn_vni)
+
+        ns_mgr.delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
+            ns_mgr.west_dev_mgr, ns_mgr.obj_west_wan_node,
+            wan_vpn_bd=obj_slicing.west_wan_vpn_bridge_domain,
+            access_vpn_bd=obj_slicing.west_access_vpn_bridge_domain,
+            access_vpn_vxlan_vni=obj_slicing.west_access_vpn_vni)
+
+        obj_slicing.destroy(context)

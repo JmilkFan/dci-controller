@@ -71,10 +71,10 @@ def _prepare_l2vpn_slicing_configuration():
     return configuration
 
 
-def execute_l2vpn_slicing_flow(obj_east_site, obj_west_site,
-                               subnet_cidr, slicing_name,
-                               east_dcn_vn_subnet_allocation_pool,
-                               west_dcn_vn_subnet_allocation_pool):
+def execute_create_l2vpn_slicing_flow(obj_east_site, obj_west_site,
+                                      subnet_cidr, slicing_name,
+                                      east_dcn_vn_subnet_allocation_pool,
+                                      west_dcn_vn_subnet_allocation_pool):
 
     flow_name = "create_l2vpn_slicing_flow"
     flow_list = [tasks.EastDCN_EVPNVxLAN(),

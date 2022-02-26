@@ -83,9 +83,7 @@ class NetEngineDriver(DeviceDriver):
 
     def create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             self, wan_vpn_name, wan_vpn_rd, wan_vpn_rt,
-            preset_srv6_locator_arg, preset_srv6_locator_arg_prefix,
-            preset_srv6_locator_arg_prefix_len, preset_srv6_locator,
-            preset_srv6_locator_prefix, preset_srv6_locator_prefix_len,
+            preset_srv6_locator_arg, preset_srv6_locator,
             access_vpn_name, access_vpn_rd, access_vpn_rt,
             access_vpn_vxlan_vni, preset_vxlan_nve_intf,
             preset_vxlan_nve_intf_ipaddr, preset_vxlan_nve_peer_ipaddr,
@@ -102,11 +100,7 @@ class NetEngineDriver(DeviceDriver):
             'WAN_VPN_RD': wan_vpn_rd,
             'WAN_VPN_RT': wan_vpn_rt,
             'PRESET_SRV6_LOCATOR_ARG': preset_srv6_locator_arg,
-            'PRESET_SRV6_LOCATOR_ARG_PREFIX': preset_srv6_locator_arg_prefix,
-            'PRESET_SRV6_LOCATOR_ARG_PREFIX_LEN': preset_srv6_locator_arg_prefix_len,  # noqa
             'PRESET_SRV6_LOCATOR': preset_srv6_locator,
-            'PRESET_SRV6_LOCATOR_PREFIX': preset_srv6_locator_prefix,
-            'PRESET_SRV6_LOCATOR_PREFIX_LEN': preset_srv6_locator_prefix_len,
 
             # ACCESS VPN
             'ACCESS_VPN_NAME': access_vpn_name,

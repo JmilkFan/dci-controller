@@ -66,10 +66,6 @@ class EastVPN_EVPNVPLSoSRv6BE(task.Task):
                 east_wan_vpn_bd, east_access_vpn_rd, east_access_vpn_rt,
                 east_access_vpn_bd, east_vn_vni, splicing_vlan_id,
                 *args, **kwargs):
-        ns_mgr.obj_east_wan_node.preset_srv6_locator_arg_prefix = '21::'
-        ns_mgr.obj_east_wan_node.preset_srv6_locator_arg_prefix_len = '64'
-        ns_mgr.obj_east_wan_node.preset_srv6_locator_prefix = '20::'
-        ns_mgr.obj_east_wan_node.preset_srv6_locator_prefix_len = '64'
         ns_mgr.create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             dev_mgr=ns_mgr.east_dev_mgr,
             wan_node=ns_mgr.obj_east_wan_node,
@@ -102,10 +98,6 @@ class WestVPN_EVPNVPLSoSRv6BE(task.Task):
                 west_wan_vpn_bd, west_access_vpn_rd, west_access_vpn_rt,
                 west_access_vpn_bd, west_vn_vni, splicing_vlan_id,
                 *args, **kwargs):
-        ns_mgr.obj_west_wan_node.preset_srv6_locator_arg_prefix = '31::'
-        ns_mgr.obj_west_wan_node.preset_srv6_locator_arg_prefix_len = 64
-        ns_mgr.obj_west_wan_node.preset_srv6_locator_prefix = '30::'
-        ns_mgr.obj_west_wan_node.preset_srv6_locator_prefix_len = 64
         ns_mgr.create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             dev_mgr=ns_mgr.west_dev_mgr,
             wan_node=ns_mgr.obj_west_wan_node,

@@ -191,34 +191,6 @@
           </interface>
         </interfaces>
       </ifm>
-      <network-instance xmlns="urn:huawei:yang:huawei-network-instance">
-        <instances>
-          <instance>
-            <name>_public_</name>
-            <srv6 xmlns="urn:huawei:yang:huawei-srv6">
-              <locators>
-                <locator nc:operation="merge">
-                  <name>{{ PRESET_SRV6_LOCATOR }}</name>
-                  <prefix>{{ PRESET_SRV6_LOCATOR_PREFIX }}</prefix>
-                  <prefix-length>{{ PRESET_SRV6_LOCATOR_PREFIX_LEN }}</prefix-length>
-                  <static-length>0</static-length>
-                  <args-length>0</args-length>
-                </locator>
-                <locator nc:operation="merge">
-                  <name>{{ PRESET_SRV6_LOCATOR_ARG }}</name>
-                  <prefix>{{ PRESET_SRV6_LOCATOR_ARG_PREFIX }}</prefix>
-                  <prefix-length>{{ PRESET_SRV6_LOCATOR_ARG_PREFIX_LEN }}</prefix-length>
-                  <static-length>0</static-length>
-                  <args-length>10</args-length>
-                </locator>
-              </locators>
-              <global-ipv6uc-attribute xmlns="urn:huawei:yang:huawei-unicast-fwd-srv6" nc:operation="merge">
-                <srv6-ttl-mode>pipe</srv6-ttl-mode>
-              </global-ipv6uc-attribute>
-            </srv6>
-          </instance>
-        </instances>
-      </network-instance>
       <nvo3 xmlns="urn:huawei:yang:huawei-nvo3">
         <vni-instances>
           <vni-instance nc:operation="create">
