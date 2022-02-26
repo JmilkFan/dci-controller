@@ -14,19 +14,25 @@
 
 """SQLAlchemy models for accelerator service."""
 
-from oslo_db import options as db_options
-from oslo_db.sqlalchemy import models
-from oslo_utils import timeutils
+import urllib.parse as urlparse
+
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy.orm import relationship
 from sqlalchemy import String
-import urllib.parse as urlparse
+
+from oslo_db import options as db_options
+from oslo_db.sqlalchemy import models
+from oslo_db.sqlalchemy import types as db_types
+from oslo_utils import timeutils
 
 from dci.common import constants
 from dci.common import paths
 from dci.conf import CONF
+from dci.db import types
 
 
 _DEFAULT_SQL_CONNECTION = 'sqlite:///' + paths.state_path_def('dci-controller.sqlite')  # noqa
@@ -73,11 +79,10 @@ class Site(Base):
 
     uuid = Column(String(36), primary_key=True)
     name = Column(String(36), nullable=True)
-    tf_api_server_host = Column(String(36), nullable=False)
+    tf_api_server_host = Column(types.IPAddress(), nullable=False)
     tf_api_server_port = Column(Integer, nullable=False)
     tf_username = Column(String(36), nullable=False)
     tf_password = Column(String(36), nullable=False)
-    # TODO(fanguiju): Implement openstackclient and check the account infos.
     os_auth_url = Column(String(36), nullable=True)
     os_region = Column(String(36), nullable=True)
     os_project_domain_name = Column(String(36), nullable=True)
@@ -86,6 +91,13 @@ class Site(Base):
     os_username = Column(String(36), nullable=True)
     os_password = Column(String(36), nullable=True)
     state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
+
+    wan_nodes = relationship(
+        'WANNode',
+        lazy='subquery',
+        backref='wan_nodes',
+        foreign_keys='WANNode.site_uuid',
+        primaryjoin='Site.uuid == WANNode.site_uuid')
 
 
 class WANNode(Base):
@@ -96,12 +108,27 @@ class WANNode(Base):
     uuid = Column(String(36), primary_key=True)
     name = Column(String(36), nullable=True)
     vendor = Column(Enum(constants.HUAWEI), nullable=False)
-    netconf_host = Column(String(36), nullable=False)
+    netconf_host = Column(types.IPAddress(), nullable=False)
     netconf_port = Column(Integer, nullable=False)
     netconf_username = Column(String(36), nullable=False)
     netconf_password = Column(String(36), nullable=False)
     as_number = Column(Integer, nullable=True)
+    roles = Column(db_types.JsonEncodedList, nullable=False)
+    site_uuid = Column(String(36), ForeignKey('sites.uuid'))
     state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
+
+    # for EVPN VPLS over SRv6 BE WAN VPN
+    preset_evpn_vpls_o_srv6_be_locator_arg = Column(String(36), nullable=False)
+    preset_evpn_vpls_o_srv6_be_locator = Column(String(36), nullable=False)
+
+    # for EVPN VxLAN Access VPN
+    preset_evpn_vxlan_nve_intf = Column(String(36), nullable=False)
+    preset_evpn_vxlan_nve_intf_ipaddr = Column(types.IPAddress(), nullable=False)  # noqa
+    preset_evpn_vxlan_nve_peer_ipaddr = Column(types.IPAddress(), nullable=False)  # noqa
+
+    # for VPN splicing
+    preset_wan_vpn_bd_intf = Column(String(36), nullable=False)
+    preset_access_vpn_bd_intf = Column(String(36), nullable=False)
 
 
 class EVPNVPLSoSRv6BESlicing(Base):
@@ -111,7 +138,7 @@ class EVPNVPLSoSRv6BESlicing(Base):
 
     uuid = Column(String(36), primary_key=True)
     name = Column(String(36), nullable=False)
-    subnet_cidr = Column(String(36), nullable=False)
+    subnet_cidr = Column(types.CIDR(), nullable=False)
     state = Column(Enum(constants.ACTIVE, constants.INACTIVE), nullable=False)
 
     ###
@@ -122,23 +149,23 @@ class EVPNVPLSoSRv6BESlicing(Base):
 
     # DCN VN
     east_site_vn_uuid = Column(String(36), nullable=False)
-    east_site_vn_vni = Column(Integer, nullable=False)
-    east_site_route_target = Column(Integer, nullable=False)
+    east_site_vn_vni = Column(String(16), nullable=False)
+    east_site_route_target = Column(String(16), nullable=False)
     east_site_subnet_allocation_pool = Column(String(36), nullable=False)
 
     # Access VPN
-    east_access_vpn_vni = Column(Integer, nullable=False)
-    east_access_vpn_route_target = Column(Integer, nullable=False)
-    east_access_vpn_route_distinguisher = Column(Integer, nullable=False)
+    east_access_vpn_vni = Column(String(16), nullable=False)
+    east_access_vpn_route_target = Column(String(16), nullable=False)
+    east_access_vpn_route_distinguisher = Column(String(16), nullable=False)
 
     # WAN VPN
-    east_wan_vpn_route_target = Column(Integer, nullable=False)
-    east_wan_vpn_route_distinguisher = Column(Integer, nullable=False)
+    east_wan_vpn_route_target = Column(String(16), nullable=False)
+    east_wan_vpn_route_distinguisher = Column(String(16), nullable=False)
 
     # VPN Splicing
-    east_access_vpn_bridge_domain = Column(Integer, nullable=False)
-    east_wan_vpn_bridge_domain = Column(Integer, nullable=False)
-    east_splicing_vlan_id = Column(Integer, nullable=False)
+    east_access_vpn_bridge_domain = Column(String(16), nullable=False)
+    east_wan_vpn_bridge_domain = Column(String(16), nullable=False)
+    east_splicing_vlan_id = Column(String(16), nullable=False)
 
     ###
     # West configuration.
@@ -149,19 +176,19 @@ class EVPNVPLSoSRv6BESlicing(Base):
     # DCN VN
     west_site_vn_uuid = Column(String(36), nullable=False)
     west_site_subnet_allocation_pool = Column(String(36), nullable=False)
-    west_site_vn_vni = Column(Integer, nullable=False)
-    west_site_route_target = Column(Integer, nullable=False)
+    west_site_vn_vni = Column(String(16), nullable=False)
+    west_site_route_target = Column(String(16), nullable=False)
 
     # Access VPN
-    west_access_vpn_vni = Column(Integer, nullable=False)
-    west_access_vpn_route_target = Column(Integer, nullable=False)
-    west_access_vpn_route_distinguisher = Column(Integer, nullable=False)
+    west_access_vpn_vni = Column(String(16), nullable=False)
+    west_access_vpn_route_target = Column(String(16), nullable=False)
+    west_access_vpn_route_distinguisher = Column(String(16), nullable=False)
 
     # WAN VPN
-    west_wan_vpn_route_target = Column(Integer, nullable=False)
-    west_wan_vpn_route_distinguisher = Column(Integer, nullable=False)
+    west_wan_vpn_route_target = Column(String(16), nullable=False)
+    west_wan_vpn_route_distinguisher = Column(String(16), nullable=False)
 
     # VPN Splicing
-    west_access_vpn_bridge_domain = Column(Integer, nullable=False)
-    west_wan_vpn_bridge_domain = Column(Integer, nullable=False)
-    west_splicing_vlan_id = Column(Integer, nullable=False)
+    west_access_vpn_bridge_domain = Column(String(16), nullable=False)
+    west_wan_vpn_bridge_domain = Column(String(16), nullable=False)
+    west_splicing_vlan_id = Column(String(16), nullable=False)

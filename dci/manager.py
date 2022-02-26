@@ -19,17 +19,16 @@ from dci.sdnc_manager.tungsten_fabric import vnc_api_client as tf_vnc_api
 
 class NetworkSlicingManager(object):
 
-    def __init__(self, east_site, east_wan_node, west_site, west_wan_node,
-                 slicing_name):
-        self.east_site = east_site
-        self.east_wan_node = east_wan_node
-        self.east_sdnc_mgr = self._get_sdnc_mgr(east_site)
-        self.east_dev_mgr = self._get_dev_mgr(east_wan_node)
+    def __init__(self, obj_east_site, obj_west_site, slicing_name):
+        obj_east_wan_node = obj_east_site.wan_nodes[0]
+        self.east_wan_node = obj_east_wan_node
+        self.east_sdnc_mgr = self._get_sdnc_mgr(obj_east_site)
+        self.east_dev_mgr = self._get_dev_mgr(obj_east_wan_node)
 
-        self.west_site = west_site
-        self.west_wan_node = west_wan_node
-        self.west_sdnc_mgr = self._get_sdnc_mgr(west_site)
-        self.west_dev_mgr = self._get_dev_mgr(west_wan_node)
+        obj_west_wan_node = obj_west_site.wan_nodes[0]
+        self.west_wan_node = obj_west_wan_node
+        self.west_sdnc_mgr = self._get_sdnc_mgr(obj_west_site)
+        self.west_dev_mgr = self._get_dev_mgr(obj_west_wan_node)
 
         self.vn_name = constants.VN_NAME_PREFIX + slicing_name
         self.wan_vpn_name = constants.WAN_VPN_NAME_PREFIX + slicing_name
@@ -61,7 +60,7 @@ class NetworkSlicingManager(object):
         sdnc_mgr.delete_virtual_network(self.vn_name)
 
     def create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
-            self, dev_mgr,
+            self, dev_mgr, wan_node,
             wan_vpn_rd, wan_vpn_rt, wan_vpn_bd,
             access_vpn_rd, access_vpn_rt, access_vpn_bd,
             access_vpn_vxlan_vni, splicing_vlan_id):
@@ -69,33 +68,34 @@ class NetworkSlicingManager(object):
             wan_vpn_name=self.wan_vpn_name,
             wan_vpn_rd=wan_vpn_rd,
             wan_vpn_rt=wan_vpn_rt,
-            preset_srv6_locator_arg=self.wan_node.preset_srv6_locator_arg,
-            preset_srv6_locator=self.wan_node.preset_srv6_locator,
+            preset_srv6_locator_arg=wan_node.preset_evpn_vpls_o_srv6_be_locator_arg,  # noqa
+            preset_srv6_locator=wan_node.preset_evpn_vpls_o_srv6_be_locator,
             access_vpn_name=self.access_vpn_name,
             access_vpn_rd=access_vpn_rd,
             access_vpn_rt=access_vpn_rt,
             access_vpn_vxlan_vni=access_vpn_vxlan_vni,
-            preset_vxlan_nve_intf=self.wan_node.preset_vxlan_nve_intf,
-            preset_vxlan_nve_intf_ipaddr=self.wan_node.preset_vxlan_nve_intf_ipaddr,  # noqa
-            preset_vxlan_nve_peer_ipaddr=self.wan_node.preset_vxlan_nve_peer_ipaddr,  # noqa
+            preset_vxlan_nve_intf=wan_node.preset_evpn_vxlan_nve_intf,
+            preset_vxlan_nve_intf_ipaddr=wan_node.preset_evpn_vxlan_nve_intf_ipaddr,  # noqa
+            preset_vxlan_nve_peer_ipaddr=wan_node.preset_evpn_vxlan_nve_peer_ipaddr,  # noqa
             splicing_vlan_id=splicing_vlan_id,
             wan_vpn_bd=wan_vpn_bd,
-            preset_wan_vpn_bd_intf=self.wan_node.preset_wan_vpn_bd_intf,
+            preset_wan_vpn_bd_intf=wan_node.preset_wan_vpn_bd_intf,
             access_vpn_bd=access_vpn_bd,
-            preset_access_vpn_bd_intf=self.wan_node.preset_access_vpn_bd_intf
+            preset_access_vpn_bd_intf=wan_node.preset_access_vpn_bd_intf
         )
 
     def delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
-            self, dev_mgr, access_vpn_vxlan_vni, wan_vpn_bd, access_vpn_bd):
+            self, dev_mgr, wan_node, access_vpn_vxlan_vni,
+            wan_vpn_bd, access_vpn_bd):
         dev_mgr.delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             wan_vpn_name=self.wan_vpn_name,
             access_vpn_name=self.access_vpn_name,
             access_vpn_vxlan_vni=access_vpn_vxlan_vni,
-            preset_vxlan_nve_intf=self.wan_node.preset_vxlan_nve_intf,
-            preset_vxlan_nve_intf_ipaddr=self.wan_node.preset_vxlan_nve_intf_ipaddr,  # noqa
-            preset_tf_control_node_ipaddr=self.wan_node.preset_tf_control_node_ipaddr,  # noqa
+            preset_vxlan_nve_intf=wan_node.preset_evpn_vxlan_nve_intf,
+            preset_vxlan_nve_intf_ipaddr=wan_node.preset_evpn_vxlan_nve_intf_ipaddr,  # noqa
+            preset_vxlan_nve_peer_ipaddr=wan_node.preset_evpn_vxlan_nve_peer_ipaddr,  # noqa
             wan_vpn_bd=wan_vpn_bd,
-            preset_wan_vpn_bd_intf=self.wan_node.preset_wan_vpn_bd_intf,
+            preset_wan_vpn_bd_intf=wan_node.preset_wan_vpn_bd_intf,
             access_vpn_bd=access_vpn_bd,
-            preset_access_vpn_bd_intf=self.wan_node.preset_access_vpn_bd_intf
+            preset_access_vpn_bd_intf=wan_node.preset_access_vpn_bd_intf
         )

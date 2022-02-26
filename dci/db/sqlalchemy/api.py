@@ -115,6 +115,13 @@ def _paginate_query(context, model, query, limit=None, marker=None,
     return query.all()
 
 
+def _resource_refs(resource_dict, resource_class):
+    resource_ref = resource_class()
+    for k, v in resource_dict.items():
+        resource_ref[k] = v
+    return resource_ref
+
+
 class Connection(api.Connection):
     """SqlAlchemy connection."""
 
@@ -176,6 +183,11 @@ class Connection(api.Connection):
         if not values.get('uuid'):
             values['uuid'] = uuidutils.generate_uuid()
 
+        if values.get('wan_nodes'):
+            wan_nodes = values.pop('wan_nodes')
+            values['wan_nodes'] = [_resource_refs(wan_node, models.WANNode)
+                                   for wan_node in wan_nodes]
+
         site = models.Site()
         site.update(values)
 
@@ -185,6 +197,8 @@ class Connection(api.Connection):
                 session.flush()
             except db_exc.DBDuplicateEntry:
                 raise exception.RecordAlreadyExists(uuid=values['uuid'])
+
+            site['wan_nodes'] = []
             return site
 
     @oslo_db_api.retry_on_deadlock

@@ -19,6 +19,7 @@ from dci.common import constants
 from dci.db import api as dbapi
 from dci.objects import base
 from dci.objects import fields as object_fields
+from dci.objects.wan_node import WANNode
 
 
 LOG = logging.getLogger(__name__)
@@ -48,20 +49,63 @@ class Site(base.DCIObject, object_base.VersionedObjectDictCompat):
         'os_password': object_fields.StringField(nullable=True),
         'state': object_fields.EnumField(valid_values=[constants.ACTIVE,
                                                        constants.INACTIVE],
-                                         nullable=False)
+                                         nullable=False),
+        'wan_nodes': object_fields.ListOfObjectsField('WANNode',
+                                                      nullable=False)
     }
+
+    def as_dict(self):
+        dict_ = {}
+        for field in self.fields:
+
+            if self.obj_attr_is_set(field):
+                if isinstance(getattr(self, field), Site):
+                    value = getattr(self, field).as_dict()
+
+                elif field == 'wan_nodes':
+                    wan_node_list_of_dict = []
+                    wan_nodes = getattr(self, field)
+                    for wan_node in wan_nodes:
+                        if isinstance(wan_node, WANNode):
+                            wan_node_dict = wan_node.as_dict()
+                            wan_node_dict.pop('created_at')
+                            wan_node_dict.pop('updated_at')
+                            wan_node_list_of_dict.append(wan_node_dict)
+                    value = wan_node_list_of_dict
+
+                else:
+                    value = getattr(self, field)
+
+            dict_[field] = value
+        return dict_
+
+    @staticmethod
+    def _from_db_object(obj_site, db_site, context):
+        for key, field in obj_site.fields.items():
+
+            if key == 'wan_nodes':
+                obj_site.wan_nodes = []
+                for db_wan_node in db_site.get('wan_nodes'):
+                    obj_wan_node = WANNode(context)
+                    WANNode._from_db_object(obj_wan_node, db_wan_node)
+                    obj_site.wan_nodes.append(obj_wan_node)
+            else:
+                obj_site[key] = db_site.get(key)
+
+        obj_site.obj_reset_changes()
+        return obj_site
 
     def create(self, context):
         """Create a DCI site record in the DB."""
         values = self.obj_get_changes()
         db_site = self.dbapi.site_create(context, values)
-        self._from_db_object(self, db_site)
+        self._from_db_object(self, db_site, context)
 
     @classmethod
     def get(cls, context, uuid):
         """Find a DCI site and return an Obj DCI site."""
         db_site = cls.dbapi.site_get(context, uuid)
-        obj_site = cls._from_db_object(cls(context), db_site)
+        obj_site = cls._from_db_object(cls(context), db_site, context)
         return obj_site
 
     @classmethod
@@ -83,7 +127,7 @@ class Site(base.DCIObject, object_base.VersionedObjectDictCompat):
         """Update a DCI site record in the DB."""
         updates = self.obj_get_changes()
         db_site = self.dbapi.site_update(context, self.uuid, updates)
-        self._from_db_object(self, db_site)
+        self._from_db_object(self, db_site, context)
 
     def destroy(self, context):
         """Delete the DCI site from the DB."""

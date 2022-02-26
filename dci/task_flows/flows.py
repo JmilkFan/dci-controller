@@ -17,7 +17,7 @@ import taskflow.engines
 from taskflow.patterns import linear_flow as lt
 
 from dci.common import utils
-from dci.flows import tasks
+from dci.task_flows import tasks
 from dci import manager
 
 
@@ -72,9 +72,8 @@ def _prepare_l2vpn_slicing_configuration():
     return configuration
 
 
-def execute_l2vpn_slicing_flow(subnet_cidr, slicing_name,
-                               east_site, east_wan_node,
-                               west_site, west_wan_node,
+def execute_l2vpn_slicing_flow(obj_east_site, obj_west_site,
+                               subnet_cidr, slicing_name,
                                east_site_subnet_ip_pool,
                                west_site_subnet_ip_pool):
 
@@ -85,11 +84,12 @@ def execute_l2vpn_slicing_flow(subnet_cidr, slicing_name,
                  tasks.WestVPN_EVPNVPLSoSRv6BE()]
 
     flow_store = _prepare_l2vpn_slicing_configuration()
-    flow_store['ns_mgr'] = manager.NetworkSlicingManager(
-        east_site, east_wan_node, west_site, west_wan_node, slicing_name)
     flow_store['subnet_cidr'] = subnet_cidr
     flow_store['east_site_subnet_ip_pool'] = east_site_subnet_ip_pool
     flow_store['west_site_subnet_ip_pool'] = west_site_subnet_ip_pool
+    flow_store['ns_mgr'] = manager.NetworkSlicingManager(obj_east_site,
+                                                         obj_west_site,
+                                                         slicing_name)
 
     flow_engine = get_flow(flow_name, flow_list, flow_store)
     flow_engine.run()

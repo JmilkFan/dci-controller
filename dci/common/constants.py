@@ -27,11 +27,15 @@ DEVICE_VENDOR_MAPPING = {
     JUNIPER: 'junos'
 }
 
-# enum of wan node configura mode
-SSHCLI = 'sshcli'
-NETCONF = 'netconf'
-LIST_OF_VAILD_WAN_NODE_CONFIGURA_MODE = (SSHCLI, NETCONF)
-
 # enum of SRv6 routing type
 BEST_EFFORT = 'be'
 TRAFFIC_ENGINEERING = 'te'
+
+# name prefix
+VN_NAME_PREFIX = 'ns-dcn-l2vpn-'
+WAN_VPN_NAME_PREFIX = 'ns-wan-l2vpn-'
+ACCESS_VPN_NAME_PREFIX = 'ns-an-l2vpn-'
+
+# WAN Node Roles
+WAN_NODE_ROLE_DCGW = 'dcgw'
+WAN_NODE_ROLE_PE = 'pe'

@@ -61,6 +61,7 @@ class EastVPN_EVPNVPLSoSRv6BE(task.Task):
                 *args, **kwargs):
         ns_mgr.create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             dev_mgr=ns_mgr.east_dev_mgr,
+            wan_node=self.obj_east_wan_node,
             wan_vpn_rd=east_wan_vpn_rd,
             wan_vpn_rt=east_wan_vpn_rt,
             wan_vpn_bd=east_wan_vpn_bd,
@@ -75,6 +76,7 @@ class EastVPN_EVPNVPLSoSRv6BE(task.Task):
                result, *args, **kwargs):
         ns_mgr.delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             dev_mgr=ns_mgr.east_dev_mgr,
+            wan_node=self.obj_east_wan_node,
             access_vpn_vxlan_vni=east_vn_vni,
             wan_vpn_bd=east_wan_vpn_bd,
             access_vpn_bd=east_access_vpn_bd
@@ -91,6 +93,7 @@ class WestVPN_EVPNVPLSoSRv6BE(task.Task):
                 *args, **kwargs):
         ns_mgr.create_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             dev_mgr=ns_mgr.west_dev_mgr,
+            wan_node=self.obj_west_wan_node,
             wan_vpn_rd=west_wan_vpn_rd,
             wan_vpn_rt=west_wan_vpn_rt,
             wan_vpn_bd=west_wan_vpn_bd,
@@ -105,6 +108,7 @@ class WestVPN_EVPNVPLSoSRv6BE(task.Task):
                result, *args, **kwargs):
         ns_mgr.delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
             dev_mgr=ns_mgr.west_dev_mgr,
+            wan_node=self.obj_west_wan_node,
             access_vpn_vxlan_vni=west_vn_vni,
             wan_vpn_bd=west_wan_vpn_bd,
             access_vpn_bd=west_access_vpn_bd

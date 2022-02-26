@@ -72,7 +72,7 @@ class DCIObject(object_base.VersionedObject):
                 for k in self.fields if self.obj_attr_is_set(k)}
 
     @staticmethod
-    def _from_db_object(obj, db_obj):
+    def _from_db_object(obj, db_obj, context=None):
         """Converts a database entity to a formal object.
 
         :param obj: An object of the class.
@@ -92,7 +92,7 @@ class DCIObject(object_base.VersionedObject):
 
         objs = []
         for db_obj in db_objs:
-            objs.append(cls._from_db_object(cls(context), db_obj))
+            objs.append(cls._from_db_object(cls(context), db_obj, context))
         return objs
 
     def obj_make_compatible(self, primitive, target_version):

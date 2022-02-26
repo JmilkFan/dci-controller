@@ -42,9 +42,24 @@ class WANNode(base.DCIObject, object_base.VersionedObjectDictCompat):
         'netconf_username': object_fields.StringField(nullable=False),
         'netconf_password': object_fields.StringField(nullable=False),
         'as_number': object_fields.IntegerField(nullable=True),
+        'roles': object_fields.ListOfStringsField(nullable=False),
+        'site_uuid': object_fields.UUIDField(nullable=False),
         'state': object_fields.EnumField(
             valid_values=[constants.ACTIVE, constants.INACTIVE],
-            nullable=False)
+            nullable=False),
+
+        # for EVPN VPLS over SRv6 BE WAN VPN
+        'preset_evpn_vpls_o_srv6_be_locator_arg': object_fields.StringField(nullable=False),  # noqa
+        'preset_evpn_vpls_o_srv6_be_locator': object_fields.StringField(nullable=False),  # noqa
+
+        # for EVPN VxLAN Access VPN
+        'preset_evpn_vxlan_nve_intf': object_fields.StringField(nullable=False),  # noqa
+        'preset_evpn_vxlan_nve_intf_ipaddr': object_fields.StringField(nullable=False),  # noqa
+        'preset_evpn_vxlan_nve_peer_ipaddr': object_fields.StringField(nullable=False),  # noqa
+
+        # for VPN splicing
+        'preset_wan_vpn_bd_intf': object_fields.StringField(nullable=False),
+        'preset_access_vpn_bd_intf': object_fields.StringField(nullable=False),
     }
 
     def create(self, context):

@@ -15,8 +15,6 @@
 
 from http import HTTPStatus
 import pecan
-import wsme
-from wsme import types as wtypes
 
 from oslo_log import log
 
@@ -45,31 +43,58 @@ class WANNode(base.APIBase):
     uuid = types.uuid
     """The UUID of the WAN node."""
 
-    name = wtypes.text
+    name = types.text
     """The name of WAN node."""
 
-    vendor = wtypes.text
+    vendor = types.text
     """Network Device Vendor."""
 
-    netconf_host = wtypes.IPv4AddressType()
+    netconf_host = types.ipv4
     """The NETCONF host IP address."""
 
-    netconf_port = wtypes.IntegerType()
+    netconf_port = types.integer
     """The NETCONF host Port."""
 
-    netconf_username = wtypes.text
+    netconf_username = types.text
     """The NETCONF user."""
 
-    netconf_password = wtypes.text
+    netconf_password = types.text
     """The NETCONF password."""
 
-    as_number = wtypes.IntegerType()
+    as_number = types.integer
     """AS Number."""
 
-    state = wtypes.text
+    roles = types.list_of_string
+    """Roles of WAN Node."""
+
+    site_uuid = types.text
+    """UUID of site."""
+
+    state = types.text
     """State of WANNode."""
 
-    links = wsme.wsattr([link.Link], readonly=True)
+    preset_evpn_vpls_o_srv6_be_locator_arg = types.text
+    """EVPN VPLS over SRv6 BE Locator Arg."""
+
+    preset_evpn_vpls_o_srv6_be_locator = types.text
+    """EVPN VPLS over SRv6 BE Locator."""
+
+    preset_evpn_vxlan_nve_intf = types.text
+    """EVPN VxLAN NVE Interface."""
+
+    preset_evpn_vxlan_nve_intf_ipaddr = types.ipv4
+    """EVPN VxLAN NVE Interface IP address."""
+
+    preset_evpn_vxlan_nve_peer_ipaddr = types.ipv4
+    """EVPN VxLAN NVE Peer IP address."""
+
+    preset_wan_vpn_bd_intf = types.text
+    """WAN VPN Bridge Domain Interface."""
+
+    preset_access_vpn_bd_intf = types.text
+    """Access VPN Bridge Domain Interface."""
+
+    links = types.links
     """A list containing a self link"""
 
     def __init__(self, **kwargs):
@@ -77,7 +102,7 @@ class WANNode(base.APIBase):
         self.fields = []
         for field in objects.WANNode.fields:
             self.fields.append(field)
-            setattr(self, field, kwargs.get(field, wtypes.Unset))
+            setattr(self, field, kwargs.get(field, types.unset))
 
     @classmethod
     def convert_with_links(cls, obj_wan_node):
@@ -107,7 +132,7 @@ class WANNodeController(base.DCIController):
     """REST controller for WAN node Controller.
     """
 
-    @expose.expose(WANNode, wtypes.text)
+    @expose.expose(WANNode, types.text)
     def get_one(self, uuid):
         """Get a single WANNode by UUID.
 
@@ -118,7 +143,7 @@ class WANNodeController(base.DCIController):
         obj_wan_node = objects.WANNode.get(context, uuid)
         return WANNode.convert_with_links(obj_wan_node)
 
-    @expose.expose(WANNodeCollection, wtypes.text)
+    @expose.expose(WANNodeCollection, types.text)
     def get_all(self, state=None):
         """Retrieve a list of WANNode.
         """
@@ -149,6 +174,16 @@ class WANNodeController(base.DCIController):
             LOG.error(msg)
             raise exception.InvalidRequestBody(msg)
 
+        if req_body.get('roles') \
+                and constants.WAN_NODE_ROLE_DCGW in req_body.get('roles'):
+            site_uuid = req_body['site_uuid']
+            try:
+                objects.Site.get(context, site_uuid)
+            except exception.ResourceNotFound as err:
+                raise err
+            except Exception as err:
+                raise err
+
         dev_manager = manager_api.DeviceManager(device_conn_ref=req_body)
         dev_manager.device_ping()
 
@@ -157,7 +192,7 @@ class WANNodeController(base.DCIController):
         obj_wan_node.create(context)
         return WANNode.convert_with_links(obj_wan_node)
 
-    @expose.expose(WANNode, wtypes.text, body=WANNode,
+    @expose.expose(WANNode, types.text, body=WANNode,
                    status_code=HTTPStatus.ACCEPTED)
     def put(self, uuid, req_body):
         """Update a WANNode.
@@ -174,7 +209,7 @@ class WANNodeController(base.DCIController):
         obj_wan_node.save(context)
         return WANNode.convert_with_links(obj_wan_node)
 
-    @expose.expose(None, wtypes.text, status_code=HTTPStatus.NO_CONTENT)
+    @expose.expose(None, types.text, status_code=HTTPStatus.NO_CONTENT)
     def delete(self, uuid):
         """Delete one WANNode by UUID.
 

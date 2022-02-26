@@ -14,6 +14,7 @@
 
 from oslo_versionedobjects import fields as object_fields
 
+
 # Import fields from oslo_versionedobjects
 EnumField = object_fields.EnumField
 IntegerField = object_fields.IntegerField
@@ -30,3 +31,4 @@ IPNetworkField = object_fields.IPNetworkField
 UnspecifiedDefault = object_fields.UnspecifiedDefault
 ListOfDictOfNullableStringsField = (
     object_fields.ListOfDictOfNullableStringsField)
+ObjectField = object_fields.ObjectField

@@ -16,7 +16,6 @@
 from http import HTTPStatus
 import pecan
 import wsme
-from wsme import types as wtypes
 
 from oslo_log import log
 
@@ -28,10 +27,11 @@ from dci.common import constants
 from dci.common.i18n import _LE
 from dci.common.i18n import _LI
 from dci import objects
-from dci.sdnc_manager import api as manager_api
+from dci.sdnc_manager.tungsten_fabric import vnc_api_client as tf_vnc_api
 
 
 LOG = log.getLogger(__name__)
+
 TF_DEFAULT_PROJECT = 'admin'
 TF_DEFAULT_PORT = 8082
 NETCONF_OVER_SSH_DEFAULT_PORT = 830
@@ -47,44 +47,47 @@ class Site(base.APIBase):
     uuid = types.uuid
     """The UUID of the DCI site."""
 
-    name = wtypes.text
+    name = types.text
     """The name of DCI site."""
 
-    tf_api_server_host = wtypes.IPv4AddressType()
+    tf_api_server_host = types.ipv4
     """The Tungsten Fabric API Server IP address."""
 
-    tf_api_server_port = wtypes.IntegerType()
+    tf_api_server_port = types.integer
     """The Tungsten Fabric API Server Port."""
 
-    tf_username = wtypes.text
+    tf_username = types.text
     """The Tungsten Fabric user."""
 
-    tf_password = wtypes.text
+    tf_password = types.text
     """The Tungsten Fabric password."""
 
-    os_auth_url = wtypes.text
+    os_auth_url = types.text
     """The Keystone Auth URL of OpenStack."""
 
-    os_region = wtypes.text
+    os_region = types.text
     """The Region of OpenStack."""
 
-    os_project_domain_name = wtypes.text
+    os_project_domain_name = types.text
     """The Project Domain Name of OpenStack."""
 
-    os_user_domain_name = wtypes.text
+    os_user_domain_name = types.text
     """The User Domain Name of OpenStack."""
 
-    os_project_name = wtypes.text
+    os_project_name = types.text
     """The Project of OpenStack."""
 
-    os_username = wtypes.text
+    os_username = types.text
     """The Username of OpenStack."""
 
-    os_password = wtypes.text
+    os_password = types.text
     """The Password of OpenStack."""
 
-    state = wtypes.text
+    state = types.text
     """State of DCI Site."""
+
+    wan_nodes = types.list_of_dict
+    """WAN Nodes associated to the site."""
 
     links = wsme.wsattr([link.Link], readonly=True)
     """A list containing a self link"""
@@ -94,7 +97,7 @@ class Site(base.APIBase):
         self.fields = []
         for field in objects.Site.fields:
             self.fields.append(field)
-            setattr(self, field, kwargs.get(field, wtypes.Unset))
+            setattr(self, field, kwargs.get(field, types.unset))
 
     @classmethod
     def convert_with_links(cls, obj_site):
@@ -127,13 +130,17 @@ class SiteController(base.DCIController):
     def _ping_check(self, site):
 
         try:
-            manager_api.SDNCManager(site)
+            tf_vnc_api.Client(host=site['tf_api_server_host'],
+                              port=site['tf_api_server_port'],
+                              username=site['tf_username'],
+                              password=site['tf_password'],
+                              project=site['os_project_name'])
         except Exception as err:
             LOG.error(_LE("Failed to PING Tungsten Fabric VNC API Server, "
                           "site login informations %s."), site)
             raise err
 
-    @expose.expose(Site, wtypes.text)
+    @expose.expose(Site, types.text)
     def get_one(self, uuid):
         """Get a single Site by UUID.
 
@@ -144,7 +151,7 @@ class SiteController(base.DCIController):
         obj_site = objects.Site.get(context, uuid)
         return Site.convert_with_links(obj_site)
 
-    @expose.expose(SiteCollection, wtypes.text)
+    @expose.expose(SiteCollection, types.text)
     def get_all(self, state=None):
         """Retrieve a list of Site.
         """
@@ -176,7 +183,7 @@ class SiteController(base.DCIController):
         obj_site.create(context)
         return Site.convert_with_links(obj_site)
 
-    @expose.expose(Site, wtypes.text, body=Site,
+    @expose.expose(Site, types.text, body=Site,
                    status_code=HTTPStatus.ACCEPTED)
     def put(self, uuid, req_body):
         """Update a Site.
@@ -194,7 +201,7 @@ class SiteController(base.DCIController):
         obj_site.save(context)
         return Site.convert_with_links(obj_site)
 
-    @expose.expose(None, wtypes.text, status_code=HTTPStatus.NO_CONTENT)
+    @expose.expose(None, types.text, status_code=HTTPStatus.NO_CONTENT)
     def delete(self, uuid):
         """Delete one Site by UUID.
 

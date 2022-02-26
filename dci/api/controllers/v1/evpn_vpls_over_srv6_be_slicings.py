@@ -58,17 +58,11 @@ class EVPNVPLSoSRv6BESlicing(base.APIBase):
     east_site_uuid = wtypes.text
     """UUID of east site."""
 
-    east_wan_node_uuid = wtypes.text
-    """UUID of east wan node."""
-
     east_site_subnet_allocation_pool = wtypes.text
     """Subnet allocation pool of east site."""
 
     west_site_uuid = wtypes.text
     """UUID of west site."""
-
-    west_wan_node_uuid = wtypes.text
-    """UUID of west wan node."""
 
     west_site_subnet_allocation_pool = wtypes.text
     """Subnet allocation pool of west site."""
@@ -167,30 +161,26 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
                      "body = %s"), req_body)
         context = pecan.request.context
 
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         try:
             obj_east_site = objects.Site.get(
                 context, uuid=req_body.get('east_site_uuid'))
             obj_west_site = objects.Site.get(
                 context, uuid=req_body.get('west_site_uuid'))
-
-            obj_east_wan_node = objects.WANNode.get(
-                context, uuid=req_body.get('east_wan_node_uuid'))
-            obj_west_wan_node = objects.WANNode.get(
-                context, uuid=req_body.get('west_wan_node_uuid'))
+        except exception.ResourceNotFound as err:
+            raise err
         except Exception as err:
             raise err
 
-        subnet_cidr = req_body.get('subnet_cidr')
-        east_site_subnet_ip_pool = req_body.get('east_site_subnet_allocation_pool')  # noqa
-        west_site_subnet_ip_pool = req_body.get('west_site_subnet_allocation_pool')  # noqa
+        # NOTE(fanguiju): Just only one wan node now.
+        if not obj_east_site.wan_nodes[0] or not obj_west_site.wan_nodes[0]:
+            raise
 
-        slicing_name = req_body.get('name')
-
-        flows.execute_l2vpn_slicing_flow(subnet_cidr, slicing_name,
-                                         obj_east_site, obj_east_wan_node,
-                                         obj_west_site, obj_west_wan_node,
-                                         east_site_subnet_ip_pool,
-                                         west_site_subnet_ip_pool)
+        flows.execute_l2vpn_slicing_flow(obj_east_site, obj_west_site,
+                                         req_body.get('subnet_cidr'),
+                                         req_body.get('name'),
+                                         req_body.get('east_site_subnet_allocation_pool'),  # noqa,
+                                         req_body.get('west_site_subnet_allocation_pool'))  # noqa,
 
         req_body['state'] = constants.ACTIVE
         obj_evpn_vpls_over_srv6_be_slicing = objects.EVPNVPLSoSRv6BESlicing(context, **req_body)  # noqa

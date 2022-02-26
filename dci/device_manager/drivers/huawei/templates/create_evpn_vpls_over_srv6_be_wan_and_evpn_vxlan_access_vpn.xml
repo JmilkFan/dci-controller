@@ -249,7 +249,7 @@
             <protocol-bgp>peer</protocol-bgp>
             <static-peers>
               <static-peer nc:operation="create">
-                <address>{{ PRESET_TF_CONTROL_NODE_IP_ADDRESS }}</address>
+                <address>{{ PRESET_VXLAN_NVE_PEER_IP_ADDRESS }}</address>
               </static-peer>
             </static-peers>
           </vni-instance>
