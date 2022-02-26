@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rpc message-id="cli2xml-5" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<rpc message-id="cli2xml-6" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
   <edit-config>
     <target>
       <candidate/>
@@ -77,11 +77,11 @@
               <control-word>false</control-word>
               <rts>
                 <rt nc:operation="create">
-                  <vrf-rt-type>import-extcommunity</vrf-rt-type>
+                  <vrf-rt-type>export-extcommunity</vrf-rt-type>
                   <vrf-rt-value>{{ WAN_VPN_RT }}</vrf-rt-value>
                 </rt>
                 <rt nc:operation="create">
-                  <vrf-rt-type>export-extcommunity</vrf-rt-type>
+                  <vrf-rt-type>import-extcommunity</vrf-rt-type>
                   <vrf-rt-value>{{ WAN_VPN_RT }}</vrf-rt-value>
                 </rt>
               </rts>
@@ -129,28 +129,6 @@
       </evpn>
       <ifm xmlns="urn:huawei:yang:huawei-ifm">
         <interfaces>
-          <interface nc:operation="create">
-            <name>{{ PRESET_VXLAN_NVE_INTERFACE }}</name>
-            <class>main-interface</class>
-            <type>Nve</type>
-            <number>1</number>
-            <admin-status>up</admin-status>
-            <link-protocol>ethernet</link-protocol>
-            <router-type>broadcast</router-type>
-            <clear-ip-df>false</clear-ip-df>
-            <link-up-down-trap-enable>true</link-up-down-trap-enable>
-            <statistic-enable>true</statistic-enable>
-            <statistic-mode>interface-based</statistic-mode>
-            <mtu>1500</mtu>
-            <spread-mtu-flag>false</spread-mtu-flag>
-            <vrf-name>_public_</vrf-name>
-            <l2-mode-enable>false</l2-mode-enable>
-            <nve xmlns="urn:huawei:yang:huawei-nvo3">
-              <attribute nc:operation="create">
-                <source-vtep-ip>{{ PRESET_VXLAN_NVE_INTERFACE_IP_ADDRESS }}</source-vtep-ip>
-              </attribute>
-            </nve>
-          </interface>
           <interface nc:operation="create">
             <name>{{ PRESET_WAN_VPN_BD_INTERFACE }}.{{ WAN_VPN_BD }}</name>
             <class>sub-interface</class>
@@ -221,15 +199,15 @@
               <locators>
                 <locator nc:operation="merge">
                   <name>{{ PRESET_SRV6_LOCATOR }}</name>
-                  <prefix>20::</prefix>
-                  <prefix-length>64</prefix-length>
+                  <prefix>{{ PRESET_SRV6_LOCATOR_PREFIX }}</prefix>
+                  <prefix-length>{{ PRESET_SRV6_LOCATOR_PREFIX_LEN }}</prefix-length>
                   <static-length>0</static-length>
                   <args-length>0</args-length>
                 </locator>
                 <locator nc:operation="merge">
                   <name>{{ PRESET_SRV6_LOCATOR_ARG }}</name>
-                  <prefix>21::</prefix>
-                  <prefix-length>64</prefix-length>
+                  <prefix>{{ PRESET_SRV6_LOCATOR_ARG_PREFIX }}</prefix>
+                  <prefix-length>{{ PRESET_SRV6_LOCATOR_ARG_PREFIX_LEN }}</prefix-length>
                   <static-length>0</static-length>
                   <args-length>10</args-length>
                 </locator>

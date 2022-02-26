@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rpc message-id="cli2xml-6" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<rpc message-id="cli2xml-5" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
   <edit-config>
     <target>
       <candidate/>
@@ -11,7 +11,7 @@
       <bd xmlns="urn:huawei:yang:huawei-bd">
         <instances>
           <instance nc:operation="create">
-            <id>12</id>
+            <id>{{ WAN_VPN_BD }}</id>
             <admin-status>up</admin-status>
             <statistic-enable>disable</statistic-enable>
             <broadcast-discard>disable</broadcast-discard>
@@ -21,7 +21,7 @@
             <split-horizon>disable</split-horizon>
             <service-points>
               <service-point nc:operation="create">
-                <interface-name>GigabitEthernet0/2/8.12</interface-name>
+                <interface-name>{{ PRESET_WAN_VPN_BD_INTERFACE }}.{{ WAN_VPN_BD }}</interface-name>
                 <split-horizon>disable</split-horizon>
                 <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="merge">
                   <e-tree-leaf>false</e-tree-leaf>
@@ -29,11 +29,11 @@
               </service-point>
             </service-points>
             <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="create">
-              <name>fgj_wan_vpn02</name>
+              <name>{{ WAN_VPN_NAME }}</name>
             </evpn>
           </instance>
           <instance nc:operation="create">
-            <id>27</id>
+            <id>{{ ACCESS_VPN_BD }}</id>
             <admin-status>up</admin-status>
             <statistic-enable>disable</statistic-enable>
             <broadcast-discard>disable</broadcast-discard>
@@ -43,7 +43,7 @@
             <split-horizon>disable</split-horizon>
             <service-points>
               <service-point nc:operation="create">
-                <interface-name>GigabitEthernet0/2/9.27</interface-name>
+                <interface-name>{{ PRESET_ACCESS_VPN_BD_INTERFACE }}.{{ ACCESS_VPN_BD }}</interface-name>
                 <split-horizon>disable</split-horizon>
                 <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="merge">
                   <e-tree-leaf>false</e-tree-leaf>
@@ -52,12 +52,12 @@
             </service-points>
             <nvo3 xmlns="urn:huawei:yang:huawei-nvo3">
               <vni-list nc:operation="create">
-                <vni>27</vni>
+                <vni>{{ ACCESS_VPN_VXLAN_VNI }}</vni>
                 <split-horizon>true</split-horizon>
               </vni-list>
             </nvo3>
             <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="create">
-              <name>fgj_dcn_access_vpn02</name>
+              <name>{{ ACCESS_VPN_NAME }}</name>
             </evpn>
           </instance>
         </instances>
@@ -65,10 +65,10 @@
       <evpn xmlns="urn:huawei:yang:huawei-evpn">
         <instances>
           <instance nc:operation="create">
-            <name>fgj_wan_vpn02</name>
+            <name>{{ WAN_VPN_NAME }}</name>
             <type>bd-evpn</type>
             <bd-evpn nc:operation="create">
-              <rd>10000:3</rd>
+              <rd>{{ WAN_VPN_RD }}</rd>
               <local-remote-frr>default</local-remote-frr>
               <mac-balance-enable>false</mac-balance-enable>
               <bypass-vxlan>default</bypass-vxlan>
@@ -77,17 +77,17 @@
               <control-word>false</control-word>
               <rts>
                 <rt nc:operation="create">
-                  <vrf-rt-type>export-extcommunity</vrf-rt-type>
-                  <vrf-rt-value>1000:3</vrf-rt-value>
+                  <vrf-rt-type>import-extcommunity</vrf-rt-type>
+                  <vrf-rt-value>{{ WAN_VPN_RT }}</vrf-rt-value>
                 </rt>
                 <rt nc:operation="create">
-                  <vrf-rt-type>import-extcommunity</vrf-rt-type>
-                  <vrf-rt-value>1000:3</vrf-rt-value>
+                  <vrf-rt-type>export-extcommunity</vrf-rt-type>
+                  <vrf-rt-value>{{ WAN_VPN_RT }}</vrf-rt-value>
                 </rt>
               </rts>
               <locator xmlns="urn:huawei:yang:huawei-evpn-srv6" nc:operation="create">
-                <srv6-locator>evpn.srv61.test_arg</srv6-locator>
-                <unicast-locator>evpn.srv61.test</unicast-locator>
+                <srv6-locator>{{ PRESET_SRV6_LOCATOR_ARG }}</srv6-locator>
+                <unicast-locator>{{ PRESET_SRV6_LOCATOR }}</unicast-locator>
               </locator>
             </bd-evpn>
             <mac-limit xmlns="urn:huawei:yang:huawei-macm">
@@ -98,10 +98,10 @@
             </mac-limit>
           </instance>
           <instance nc:operation="create">
-            <name>fgj_dcn_access_vpn02</name>
+            <name>{{ ACCESS_VPN_NAME }}</name>
             <type>bd-evpn</type>
             <bd-evpn nc:operation="create">
-              <rd>20768:1002</rd>
+              <rd>{{ ACCESS_VPN_RD }}</rd>
               <local-remote-frr>default</local-remote-frr>
               <mac-balance-enable>false</mac-balance-enable>
               <bypass-vxlan>default</bypass-vxlan>
@@ -110,11 +110,11 @@
               <rts>
                 <rt nc:operation="create">
                   <vrf-rt-type>export-extcommunity</vrf-rt-type>
-                  <vrf-rt-value>20768:20770</vrf-rt-value>
+                  <vrf-rt-value>{{ ACCESS_VPN_RT }}</vrf-rt-value>
                 </rt>
                 <rt nc:operation="create">
                   <vrf-rt-type>import-extcommunity</vrf-rt-type>
-                  <vrf-rt-value>20768:20770</vrf-rt-value>
+                  <vrf-rt-value>{{ ACCESS_VPN_RT }}</vrf-rt-value>
                 </rt>
               </rts>
             </bd-evpn>
@@ -130,11 +130,33 @@
       <ifm xmlns="urn:huawei:yang:huawei-ifm">
         <interfaces>
           <interface nc:operation="create">
-            <name>GigabitEthernet0/2/8.12</name>
+            <name>{{ PRESET_VXLAN_NVE_INTERFACE }}</name>
+            <class>main-interface</class>
+            <type>Nve</type>
+            <number>1</number>
+            <admin-status>up</admin-status>
+            <link-protocol>ethernet</link-protocol>
+            <router-type>broadcast</router-type>
+            <clear-ip-df>false</clear-ip-df>
+            <link-up-down-trap-enable>true</link-up-down-trap-enable>
+            <statistic-enable>true</statistic-enable>
+            <statistic-mode>interface-based</statistic-mode>
+            <mtu>1500</mtu>
+            <spread-mtu-flag>false</spread-mtu-flag>
+            <vrf-name>_public_</vrf-name>
+            <l2-mode-enable>false</l2-mode-enable>
+            <nve xmlns="urn:huawei:yang:huawei-nvo3">
+              <attribute nc:operation="create">
+                <source-vtep-ip>{{ PRESET_VXLAN_NVE_INTERFACE_IP_ADDRESS }}</source-vtep-ip>
+              </attribute>
+            </nve>
+          </interface>
+          <interface nc:operation="create">
+            <name>{{ PRESET_WAN_VPN_BD_INTERFACE }}.{{ WAN_VPN_BD }}</name>
             <class>sub-interface</class>
             <type>GigabitEthernet</type>
-            <parent-name>GigabitEthernet0/2/8</parent-name>
-            <number>12</number>
+            <parent-name>{{ PRESET_WAN_VPN_BD_INTERFACE }}</parent-name>
+            <number>{{ WAN_VPN_BD }}</number>
             <admin-status>up</admin-status>
             <link-protocol>ethernet</link-protocol>
             <router-type>broadcast</router-type>
@@ -150,7 +172,7 @@
                 <local-switch>disable</local-switch>
                 <dot1q nc:operation="create">
                   <vlans nc:operation="create">
-                    <vlan-list>200</vlan-list>
+                    <vlan-list>{{ SPLICING_VID }}</vlan-list>
                   </vlans>
                 </dot1q>
               </l2-sub-interface>
@@ -160,11 +182,11 @@
             </multicast-bas>
           </interface>
           <interface nc:operation="create">
-            <name>GigabitEthernet0/2/9.27</name>
+            <name>{{ PRESET_ACCESS_VPN_BD_INTERFACE }}.{{ ACCESS_VPN_BD }}</name>
             <class>sub-interface</class>
             <type>GigabitEthernet</type>
-            <parent-name>GigabitEthernet0/2/9</parent-name>
-            <number>27</number>
+            <parent-name>{{ PRESET_ACCESS_VPN_BD_INTERFACE }}</parent-name>
+            <number>{{ ACCESS_VPN_BD }}</number>
             <admin-status>up</admin-status>
             <link-protocol>ethernet</link-protocol>
             <router-type>broadcast</router-type>
@@ -180,7 +202,7 @@
                 <local-switch>disable</local-switch>
                 <dot1q nc:operation="create">
                   <vlans nc:operation="create">
-                    <vlan-list>200</vlan-list>
+                    <vlan-list>{{ SPLICING_VID }}</vlan-list>
                   </vlans>
                 </dot1q>
               </l2-sub-interface>
@@ -198,14 +220,14 @@
             <srv6 xmlns="urn:huawei:yang:huawei-srv6">
               <locators>
                 <locator nc:operation="merge">
-                  <name>evpn.srv61.test</name>
+                  <name>{{ PRESET_SRV6_LOCATOR }}</name>
                   <prefix>20::</prefix>
                   <prefix-length>64</prefix-length>
                   <static-length>0</static-length>
                   <args-length>0</args-length>
                 </locator>
                 <locator nc:operation="merge">
-                  <name>evpn.srv61.test_arg</name>
+                  <name>{{ PRESET_SRV6_LOCATOR_ARG }}</name>
                   <prefix>21::</prefix>
                   <prefix-length>64</prefix-length>
                   <static-length>0</static-length>
@@ -222,12 +244,12 @@
       <nvo3 xmlns="urn:huawei:yang:huawei-nvo3">
         <vni-instances>
           <vni-instance nc:operation="create">
-            <vni>27</vni>
-            <source-nve>Nve1</source-nve>
+            <vni>{{ ACCESS_VPN_VXLAN_VNI }}</vni>
+            <source-nve>{{ PRESET_VXLAN_NVE_INTERFACE }}</source-nve>
             <protocol-bgp>peer</protocol-bgp>
             <static-peers>
               <static-peer nc:operation="create">
-                <address>172.16.0.221</address>
+                <address>{{ PRESET_VXLAN_NVE_PEER_IP_ADDRESS }}</address>
               </static-peer>
             </static-peers>
           </vni-instance>

@@ -40,34 +40,34 @@ class EVPNVPLSoSRv6BESlicing(base.DCIObject,
         'state': object_fields.EnumField(valid_values=[constants.ACTIVE,
                                                        constants.INACTIVE],
                                          nullable=False),
+
         'east_site_uuid': object_fields.UUIDField(nullable=False),
-        'east_wan_node_uuid': object_fields.UUIDField(nullable=False),
-        'east_site_vn_uuid': object_fields.UUIDField(nullable=False),
-        'east_site_vn_vni': object_fields.IntegerField(nullable=False),
-        'east_site_route_target': object_fields.IntegerField(nullable=False),
-        'east_site_subnet_allocation_pool': object_fields.StringField(nullable=False),  # noqa
-        'east_access_vpn_vni': object_fields.IntegerField(nullable=False),
-        'east_access_vpn_route_target': object_fields.IntegerField(nullable=False),  # noqa
-        'east_access_vpn_route_distinguisher': object_fields.IntegerField(nullable=False),  # noqa
-        'east_wan_vpn_route_target': object_fields.IntegerField(nullable=False),  # noqa
-        'east_wan_vpn_route_distinguisher': object_fields.IntegerField(nullable=False),  # noqa
-        'east_access_vpn_bridge_domain': object_fields.IntegerField(nullable=False),  # noqa
-        'east_wan_vpn_bridge_domain': object_fields.IntegerField(nullable=False),  # noqa
-        'east_splicing_vlan_id': object_fields.IntegerField(nullable=False),
+        'east_dcn_vn_uuid': object_fields.UUIDField(nullable=False),
+        'east_dcn_vn_vni': object_fields.StringField(nullable=False),
+        'east_dcn_vn_route_target': object_fields.StringField(nullable=False),
+        'east_dcn_vn_subnet_allocation_pool': object_fields.StringField(nullable=False),  # noqa
+        'east_access_vpn_vni': object_fields.StringField(nullable=False),
+        'east_access_vpn_route_target': object_fields.StringField(nullable=False),  # noqa
+        'east_access_vpn_route_distinguisher': object_fields.StringField(nullable=False),  # noqa
+        'east_wan_vpn_route_target': object_fields.StringField(nullable=False),  # noqa
+        'east_wan_vpn_route_distinguisher': object_fields.StringField(nullable=False),  # noqa
+        'east_access_vpn_bridge_domain': object_fields.StringField(nullable=False),  # noqa
+        'east_wan_vpn_bridge_domain': object_fields.StringField(nullable=False),  # noqa
+        'east_splicing_vlan_id': object_fields.StringField(nullable=False),
+
         'west_site_uuid': object_fields.UUIDField(nullable=False),
-        'west_wan_node_uuid': object_fields.UUIDField(nullable=False),
-        'west_site_vn_uuid': object_fields.UUIDField(nullable=False),
-        'west_site_vn_vni': object_fields.IntegerField(nullable=False),
-        'west_site_route_target': object_fields.IntegerField(nullable=False),
-        'west_site_subnet_allocation_pool': object_fields.StringField(nullable=False),  # noqa
-        'west_access_vpn_vni': object_fields.IntegerField(nullable=False),
-        'west_access_vpn_route_target': object_fields.IntegerField(nullable=False),  # noqa
-        'west_access_vpn_route_distinguisher': object_fields.IntegerField(nullable=False),  # noqa
-        'west_wan_vpn_route_target': object_fields.IntegerField(nullable=False),  # noqa
-        'west_wan_vpn_route_distinguisher': object_fields.IntegerField(nullable=False),  # noqa
-        'west_access_vpn_bridge_domain': object_fields.IntegerField(nullable=False),  # noqa
-        'west_wan_vpn_bridge_domain': object_fields.IntegerField(nullable=False),  # noqa
-        'west_splicing_vlan_id': object_fields.IntegerField(nullable=False),
+        'west_dcn_vn_uuid': object_fields.UUIDField(nullable=False),
+        'west_dcn_vn_vni': object_fields.StringField(nullable=False),
+        'west_dcn_vn_route_target': object_fields.StringField(nullable=False),
+        'west_dcn_vn_subnet_allocation_pool': object_fields.StringField(nullable=False),  # noqa
+        'west_access_vpn_vni': object_fields.StringField(nullable=False),
+        'west_access_vpn_route_target': object_fields.StringField(nullable=False),  # noqa
+        'west_access_vpn_route_distinguisher': object_fields.StringField(nullable=False),  # noqa
+        'west_wan_vpn_route_target': object_fields.StringField(nullable=False),  # noqa
+        'west_wan_vpn_route_distinguisher': object_fields.StringField(nullable=False),  # noqa
+        'west_access_vpn_bridge_domain': object_fields.StringField(nullable=False),  # noqa
+        'west_wan_vpn_bridge_domain': object_fields.StringField(nullable=False),  # noqa
+        'west_splicing_vlan_id': object_fields.StringField(nullable=False),
     }
 
     def create(self, context):

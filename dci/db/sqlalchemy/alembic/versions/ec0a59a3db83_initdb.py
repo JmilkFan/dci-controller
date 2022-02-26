@@ -1,8 +1,8 @@
 """initdb
 
-Revision ID: ee13564fa642
+Revision ID: ec0a59a3db83
 Revises: 
-Create Date: 2022-02-26 05:42:05.560346
+Create Date: 2022-02-26 22:28:08.420602
 
 """
 from alembic import op
@@ -14,7 +14,7 @@ import dci
 
 
 # revision identifiers, used by Alembic.
-revision = 'ee13564fa642'
+revision = 'ec0a59a3db83'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -49,11 +49,10 @@ def upgrade():
     sa.Column('subnet_cidr', dci.db.types.CIDR(), nullable=False),
     sa.Column('state', sa.Enum('ACTIVE', 'INACTIVE'), nullable=False),
     sa.Column('east_site_uuid', sa.String(length=36), nullable=False),
-    sa.Column('east_wan_node_uuid', sa.String(length=36), nullable=False),
-    sa.Column('east_site_vn_uuid', sa.String(length=36), nullable=False),
-    sa.Column('east_site_vn_vni', sa.String(length=16), nullable=False),
-    sa.Column('east_site_route_target', sa.String(length=16), nullable=False),
-    sa.Column('east_site_subnet_allocation_pool', sa.String(length=36), nullable=False),
+    sa.Column('east_dcn_vn_uuid', sa.String(length=36), nullable=False),
+    sa.Column('east_dcn_vn_vni', sa.String(length=16), nullable=False),
+    sa.Column('east_dcn_vn_route_target', sa.String(length=16), nullable=False),
+    sa.Column('east_dcn_vn_subnet_allocation_pool', sa.String(length=36), nullable=False),
     sa.Column('east_access_vpn_vni', sa.String(length=16), nullable=False),
     sa.Column('east_access_vpn_route_target', sa.String(length=16), nullable=False),
     sa.Column('east_access_vpn_route_distinguisher', sa.String(length=16), nullable=False),
@@ -63,11 +62,10 @@ def upgrade():
     sa.Column('east_wan_vpn_bridge_domain', sa.String(length=16), nullable=False),
     sa.Column('east_splicing_vlan_id', sa.String(length=16), nullable=False),
     sa.Column('west_site_uuid', sa.String(length=36), nullable=False),
-    sa.Column('west_wan_node_uuid', sa.String(length=36), nullable=False),
-    sa.Column('west_site_vn_uuid', sa.String(length=36), nullable=False),
-    sa.Column('west_site_subnet_allocation_pool', sa.String(length=36), nullable=False),
-    sa.Column('west_site_vn_vni', sa.String(length=16), nullable=False),
-    sa.Column('west_site_route_target', sa.String(length=16), nullable=False),
+    sa.Column('west_dcn_vn_uuid', sa.String(length=36), nullable=False),
+    sa.Column('west_dcn_vn_vni', sa.String(length=16), nullable=False),
+    sa.Column('west_dcn_vn_route_target', sa.String(length=16), nullable=False),
+    sa.Column('west_dcn_vn_subnet_allocation_pool', sa.String(length=36), nullable=False),
     sa.Column('west_access_vpn_vni', sa.String(length=16), nullable=False),
     sa.Column('west_access_vpn_route_target', sa.String(length=16), nullable=False),
     sa.Column('west_access_vpn_route_distinguisher', sa.String(length=16), nullable=False),

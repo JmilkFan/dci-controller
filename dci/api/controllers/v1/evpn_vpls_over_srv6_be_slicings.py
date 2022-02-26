@@ -58,13 +58,13 @@ class EVPNVPLSoSRv6BESlicing(base.APIBase):
     east_site_uuid = wtypes.text
     """UUID of east site."""
 
-    east_site_subnet_allocation_pool = wtypes.text
+    east_dcn_vn_subnet_allocation_pool = wtypes.text
     """Subnet allocation pool of east site."""
 
     west_site_uuid = wtypes.text
     """UUID of west site."""
 
-    west_site_subnet_allocation_pool = wtypes.text
+    west_dcn_vn_subnet_allocation_pool = wtypes.text
     """Subnet allocation pool of west site."""
 
     links = wsme.wsattr([link.Link], readonly=True)
@@ -161,7 +161,6 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
                      "body = %s"), req_body)
         context = pecan.request.context
 
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         try:
             obj_east_site = objects.Site.get(
                 context, uuid=req_body.get('east_site_uuid'))
@@ -176,13 +175,39 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
         if not obj_east_site.wan_nodes[0] or not obj_west_site.wan_nodes[0]:
             raise
 
-        flows.execute_l2vpn_slicing_flow(obj_east_site, obj_west_site,
-                                         req_body.get('subnet_cidr'),
-                                         req_body.get('name'),
-                                         req_body.get('east_site_subnet_allocation_pool'),  # noqa,
-                                         req_body.get('west_site_subnet_allocation_pool'))  # noqa,
+        flow_store = flows.execute_l2vpn_slicing_flow(
+            obj_east_site, obj_west_site,
+            req_body.get('subnet_cidr'),
+            req_body.get('name'),
+            req_body.get('east_dcn_vn_subnet_allocation_pool'),
+            req_body.get('west_dcn_vn_subnet_allocation_pool'))
+
+        req_body['east_dcn_vn_uuid'] = flow_store['east_dcn_vn_uuid']
+        req_body['east_dcn_vn_vni'] = flow_store['east_dcn_vn_vni']
+        req_body['east_dcn_vn_route_target'] = flow_store['east_vn_rt']
+        req_body['east_access_vpn_vni'] = flow_store['east_access_vpn_vni']
+        req_body['east_access_vpn_route_target'] = flow_store['east_access_vpn_rt']  # noqa
+        req_body['east_access_vpn_route_distinguisher'] = flow_store['east_access_vpn_rd']  # noqa
+        req_body['east_wan_vpn_route_target'] = flow_store['east_wan_vpn_rt']
+        req_body['east_wan_vpn_route_distinguisher'] = flow_store['east_wan_vpn_rd']  # noqa
+        req_body['east_access_vpn_bridge_domain'] = flow_store['east_access_vpn_bd']  # noqa
+        req_body['east_wan_vpn_bridge_domain'] = flow_store['east_wan_vpn_bd']
+        req_body['east_splicing_vlan_id'] = flow_store['splicing_vlan_id']
+
+        req_body['west_dcn_vn_uuid'] = flow_store['west_dcn_vn_uuid']
+        req_body['west_dcn_vn_vni'] = flow_store['west_dcn_vn_vni']
+        req_body['west_dcn_vn_route_target'] = flow_store['west_vn_rt']
+        req_body['west_access_vpn_vni'] = flow_store['west_access_vpn_vni']
+        req_body['west_access_vpn_route_target'] = flow_store['west_access_vpn_rt']  # noqa
+        req_body['west_access_vpn_route_distinguisher'] = flow_store['west_access_vpn_rd']  # noqa
+        req_body['west_wan_vpn_route_target'] = flow_store['west_wan_vpn_rt']
+        req_body['west_wan_vpn_route_distinguisher'] = flow_store['west_wan_vpn_rd']  # noqa
+        req_body['west_access_vpn_bridge_domain'] = flow_store['west_access_vpn_bd']  # noqa
+        req_body['west_wan_vpn_bridge_domain'] = flow_store['west_wan_vpn_bd']
+        req_body['west_splicing_vlan_id'] = flow_store['splicing_vlan_id']
 
         req_body['state'] = constants.ACTIVE
+
         obj_evpn_vpls_over_srv6_be_slicing = objects.EVPNVPLSoSRv6BESlicing(context, **req_body)  # noqa
         obj_evpn_vpls_over_srv6_be_slicing.create(context)
         return EVPNVPLSoSRv6BESlicing.convert_with_links(obj_evpn_vpls_over_srv6_be_slicing)  # noqa

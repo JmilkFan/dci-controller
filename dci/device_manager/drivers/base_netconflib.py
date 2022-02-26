@@ -138,7 +138,7 @@ class BaseNETCONFLib(object):
         self._client = None
 
     def connect(self):
-        if not self._client:
+        if not self._client or not self._client.connected:
             link_device_params = {
                 'host': self.host,
                 'port': self.port,
@@ -165,6 +165,7 @@ class BaseNETCONFLib(object):
                 self._client.close_session()
             except Exception as err:
                 raise err
+        self._client = None
 
     def _execute(self, rpc_op, rpc_db, rpc_req_data,
                  def_oper, test_option, err_option, lock):

@@ -26,12 +26,12 @@ def get_shortened_ipv6_cidr(address):
     return str(net.cidr)
 
 
-def generate_route_target():
-    return "12345:%s" % random.sample('0123456789', 5)
+def generate_random_route_distinguisher():
+    return "12345:%s" % str(random.randint(1, 10240))
 
 
 def generate_random_route_target():
-    return "54321:%s" % random.sample('0123456789', 5)
+    return "54321:%s" % str(random.randint(1, 10240))
 
 
 def generate_random_bridge_domain():

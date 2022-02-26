@@ -20,15 +20,13 @@ from dci.sdnc_manager.tungsten_fabric import vnc_api_client as tf_vnc_api
 class NetworkSlicingManager(object):
 
     def __init__(self, obj_east_site, obj_west_site, slicing_name):
-        obj_east_wan_node = obj_east_site.wan_nodes[0]
-        self.east_wan_node = obj_east_wan_node
+        self.obj_east_wan_node = obj_east_site.wan_nodes[0]
         self.east_sdnc_mgr = self._get_sdnc_mgr(obj_east_site)
-        self.east_dev_mgr = self._get_dev_mgr(obj_east_wan_node)
+        self.east_dev_mgr = self._get_dev_mgr(self.obj_east_wan_node)
 
-        obj_west_wan_node = obj_west_site.wan_nodes[0]
-        self.west_wan_node = obj_west_wan_node
+        self.obj_west_wan_node = obj_west_site.wan_nodes[0]
         self.west_sdnc_mgr = self._get_sdnc_mgr(obj_west_site)
-        self.west_dev_mgr = self._get_dev_mgr(obj_west_wan_node)
+        self.west_dev_mgr = self._get_dev_mgr(self.obj_west_wan_node)
 
         self.vn_name = constants.VN_NAME_PREFIX + slicing_name
         self.wan_vpn_name = constants.WAN_VPN_NAME_PREFIX + slicing_name
@@ -51,10 +49,13 @@ class NetworkSlicingManager(object):
 
     def create_evpn_vxlan_dcn(self, sdnc_mgr, subnet_cidr,
                               subnet_allocation_pool, route_target):
+        route_target = 'target:%s' % route_target
         vn_uuid = sdnc_mgr.create_virtal_network_with_user_defined_subnet(
             self.vn_name, subnet_cidr, subnet_allocation_pool, route_target)
-        vn_vni = sdnc_mgr.get_virtual_network_vni(vn_uuid)
-        return vn_vni
+        return vn_uuid
+
+    def get_evpn_vxlan_dcn_vni(self, sdnc_mgr, vn_uuid):
+        return sdnc_mgr.get_virtual_network_vni(vn_uuid)
 
     def delete_evpn_vxlan_dcn(self, sdnc_mgr):
         sdnc_mgr.delete_virtual_network(self.vn_name)
@@ -69,7 +70,11 @@ class NetworkSlicingManager(object):
             wan_vpn_rd=wan_vpn_rd,
             wan_vpn_rt=wan_vpn_rt,
             preset_srv6_locator_arg=wan_node.preset_evpn_vpls_o_srv6_be_locator_arg,  # noqa
+            preset_srv6_locator_arg_prefix=wan_node.preset_srv6_locator_arg_prefix,  # noqa
+            preset_srv6_locator_arg_prefix_len=wan_node.preset_srv6_locator_arg_prefix_len,  # noqa
             preset_srv6_locator=wan_node.preset_evpn_vpls_o_srv6_be_locator,
+            preset_srv6_locator_prefix=wan_node.preset_srv6_locator_prefix,
+            preset_srv6_locator_prefix_len=wan_node.preset_srv6_locator_prefix_len,  # noqa
             access_vpn_name=self.access_vpn_name,
             access_vpn_rd=access_vpn_rd,
             access_vpn_rt=access_vpn_rt,
@@ -93,7 +98,6 @@ class NetworkSlicingManager(object):
             access_vpn_vxlan_vni=access_vpn_vxlan_vni,
             preset_vxlan_nve_intf=wan_node.preset_evpn_vxlan_nve_intf,
             preset_vxlan_nve_intf_ipaddr=wan_node.preset_evpn_vxlan_nve_intf_ipaddr,  # noqa
-            preset_vxlan_nve_peer_ipaddr=wan_node.preset_evpn_vxlan_nve_peer_ipaddr,  # noqa
             wan_vpn_bd=wan_vpn_bd,
             preset_wan_vpn_bd_intf=wan_node.preset_wan_vpn_bd_intf,
             access_vpn_bd=access_vpn_bd,

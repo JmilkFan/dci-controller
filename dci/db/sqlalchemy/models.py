@@ -145,13 +145,12 @@ class EVPNVPLSoSRv6BESlicing(Base):
     # East configuration.
     ##
     east_site_uuid = Column(String(36), nullable=False)
-    east_wan_node_uuid = Column(String(36), nullable=False)
 
     # DCN VN
-    east_site_vn_uuid = Column(String(36), nullable=False)
-    east_site_vn_vni = Column(String(16), nullable=False)
-    east_site_route_target = Column(String(16), nullable=False)
-    east_site_subnet_allocation_pool = Column(String(36), nullable=False)
+    east_dcn_vn_uuid = Column(String(36), nullable=False)
+    east_dcn_vn_vni = Column(String(16), nullable=False)
+    east_dcn_vn_route_target = Column(String(16), nullable=False)
+    east_dcn_vn_subnet_allocation_pool = Column(String(36), nullable=False)
 
     # Access VPN
     east_access_vpn_vni = Column(String(16), nullable=False)
@@ -171,13 +170,12 @@ class EVPNVPLSoSRv6BESlicing(Base):
     # West configuration.
     ###
     west_site_uuid = Column(String(36), nullable=False)
-    west_wan_node_uuid = Column(String(36), nullable=False)
 
     # DCN VN
-    west_site_vn_uuid = Column(String(36), nullable=False)
-    west_site_subnet_allocation_pool = Column(String(36), nullable=False)
-    west_site_vn_vni = Column(String(16), nullable=False)
-    west_site_route_target = Column(String(16), nullable=False)
+    west_dcn_vn_uuid = Column(String(36), nullable=False)
+    west_dcn_vn_vni = Column(String(16), nullable=False)
+    west_dcn_vn_route_target = Column(String(16), nullable=False)
+    west_dcn_vn_subnet_allocation_pool = Column(String(36), nullable=False)
 
     # Access VPN
     west_access_vpn_vni = Column(String(16), nullable=False)
