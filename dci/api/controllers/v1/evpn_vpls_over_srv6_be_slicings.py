@@ -29,7 +29,6 @@ from dci.common import exception
 from dci.common.i18n import _LI
 from dci import manager
 from dci import objects
-from dci.task_flows import flows
 
 
 LOG = log.getLogger(__name__)
@@ -176,10 +175,13 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
         if not obj_east_site.wan_nodes[0] or not obj_west_site.wan_nodes[0]:
             raise
 
-        flow_store = flows.execute_create_l2vpn_slicing_flow(
+        ns_mgr = manager.NetworkSlicingManager(
             obj_east_site, obj_west_site,
+            slicing_name=req_body.get('name'),
+            slicing_type=constants.L2VPN_SLICING)
+
+        flow_store = ns_mgr.execute_create_evpn_vpls_over_srv6_be_slicing_flow(
             req_body.get('subnet_cidr'),
-            req_body.get('name'),
             req_body.get('east_dcn_vn_subnet_allocation_pool'),
             req_body.get('west_dcn_vn_subnet_allocation_pool'))
 
@@ -221,8 +223,8 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
         """
         context = pecan.request.context
         LOG.info(_LI('[evpn_vpls_over_srv6_be_slicing: delete] UUID = %s'), uuid)  # noqa
-        obj_slicing = objects.EVPNVPLSoSRv6BESlicing.get(context, uuid)  # noqa
 
+        obj_slicing = objects.EVPNVPLSoSRv6BESlicing.get(context, uuid)  # noqa
         east_site_uuid = obj_slicing.east_site_uuid
         west_site_uuid = obj_slicing.west_site_uuid
 
@@ -239,19 +241,12 @@ class EVPNVPLSoSRv6BESlicingController(base.DCIController):
             obj_west_site,
             obj_slicing.name)
 
-        ns_mgr.delete_evpn_vxlan_dcn(ns_mgr.east_sdnc_mgr)
-        ns_mgr.delete_evpn_vxlan_dcn(ns_mgr.west_sdnc_mgr)
-
-        ns_mgr.delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
-            ns_mgr.east_dev_mgr, ns_mgr.obj_east_wan_node,
-            wan_vpn_bd=obj_slicing.east_wan_vpn_bridge_domain,
-            access_vpn_bd=obj_slicing.east_access_vpn_bridge_domain,
-            access_vpn_vxlan_vni=obj_slicing.east_access_vpn_vni)
-
-        ns_mgr.delete_evpn_vpls_over_srv6_be_wan_and_evpn_vxlan_access_vpn(
-            ns_mgr.west_dev_mgr, ns_mgr.obj_west_wan_node,
-            wan_vpn_bd=obj_slicing.west_wan_vpn_bridge_domain,
-            access_vpn_bd=obj_slicing.west_access_vpn_bridge_domain,
-            access_vpn_vxlan_vni=obj_slicing.west_access_vpn_vni)
+        ns_mgr.execute_delete_evpn_vpls_over_srv6_be_slicing_flow(
+            obj_slicing.east_wan_vpn_bridge_domain,
+            obj_slicing.east_access_vpn_bridge_domain,
+            obj_slicing.east_access_vpn_vni,
+            obj_slicing.west_wan_vpn_bridge_domain,
+            obj_slicing.west_access_vpn_bridge_domain,
+            obj_slicing.west_access_vpn_vni)
 
         obj_slicing.destroy(context)

@@ -104,7 +104,7 @@ class Client(object):
 
     def create_virtal_network_with_user_defined_subnet(
             self, vn_name, subnet_cidr, subnet_allocation_pool=None,
-            route_target=None):
+            route_target=None, forwarding_mode='l2_l3'):
         project_o = self._get_default_project_obj()
 
         # Create user defined Subnet Type for Virtual Network.
@@ -124,7 +124,7 @@ class Client(object):
 
         # Creste Virtual Network Type
         # NOTE(fanguiju): Alway use `automatic` vxlan_network_identifier_mode.
-        vn_t = vnc_api.VirtualNetworkType(forwarding_mode='l2_l3')
+        vn_t = vnc_api.VirtualNetworkType(forwarding_mode=forwarding_mode)
 
         # Create Route Target List Type, use default route target.
         if route_target:

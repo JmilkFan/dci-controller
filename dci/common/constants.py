@@ -39,3 +39,8 @@ ACCESS_VPN_NAME_PREFIX = 'ns-an-l2vpn-'
 # WAN Node Roles
 WAN_NODE_ROLE_DCGW = 'dcgw'
 WAN_NODE_ROLE_PE = 'pe'
+
+# Slicing type
+L2VPN_SLICING = 'l2vpn'
+L3VPN_SLICING = 'l3vpn'
+SLICING_TYPE_LIST = (L2VPN_SLICING, L3VPN_SLICING)
