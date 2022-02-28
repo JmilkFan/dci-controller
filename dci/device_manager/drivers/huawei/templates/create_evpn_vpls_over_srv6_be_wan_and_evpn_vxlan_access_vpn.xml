@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rpc message-id="cli2xml-6" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<rpc message-id="cli2xml-0" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
   <edit-config>
     <target>
       <candidate/>
@@ -12,17 +12,9 @@
         <instances>
           <instance nc:operation="create">
             <id>{{ WAN_VPN_BD }}</id>
-            <admin-status>up</admin-status>
-            <statistic-enable>disable</statistic-enable>
-            <broadcast-discard>disable</broadcast-discard>
-            <unknown-multicast-discard>disable</unknown-multicast-discard>
-            <unknown-unicast-discard>disable</unknown-unicast-discard>
-            <mac-learning>enable</mac-learning>
-            <split-horizon>disable</split-horizon>
             <service-points>
               <service-point nc:operation="create">
                 <interface-name>{{ PRESET_WAN_VPN_BD_INTERFACE }}.{{ WAN_VPN_BD }}</interface-name>
-                <split-horizon>disable</split-horizon>
                 <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="merge">
                   <e-tree-leaf>false</e-tree-leaf>
                 </evpn>
@@ -34,17 +26,9 @@
           </instance>
           <instance nc:operation="create">
             <id>{{ ACCESS_VPN_BD }}</id>
-            <admin-status>up</admin-status>
-            <statistic-enable>disable</statistic-enable>
-            <broadcast-discard>disable</broadcast-discard>
-            <unknown-multicast-discard>disable</unknown-multicast-discard>
-            <unknown-unicast-discard>disable</unknown-unicast-discard>
-            <mac-learning>enable</mac-learning>
-            <split-horizon>disable</split-horizon>
             <service-points>
               <service-point nc:operation="create">
                 <interface-name>{{ PRESET_ACCESS_VPN_BD_INTERFACE }}.{{ ACCESS_VPN_BD }}</interface-name>
-                <split-horizon>disable</split-horizon>
                 <evpn xmlns="urn:huawei:yang:huawei-evpn" nc:operation="merge">
                   <e-tree-leaf>false</e-tree-leaf>
                 </evpn>
@@ -69,12 +53,7 @@
             <type>bd-evpn</type>
             <bd-evpn nc:operation="create">
               <rd>{{ WAN_VPN_RD }}</rd>
-              <local-remote-frr>default</local-remote-frr>
-              <mac-balance-enable>false</mac-balance-enable>
-              <bypass-vxlan>default</bypass-vxlan>
-              <etree-enable>false</etree-enable>
               <srv6-mode>be</srv6-mode>
-              <control-word>false</control-word>
               <rts>
                 <rt nc:operation="create">
                   <vrf-rt-type>export-extcommunity</vrf-rt-type>
@@ -102,11 +81,6 @@
             <type>bd-evpn</type>
             <bd-evpn nc:operation="create">
               <rd>{{ ACCESS_VPN_RD }}</rd>
-              <local-remote-frr>default</local-remote-frr>
-              <mac-balance-enable>false</mac-balance-enable>
-              <bypass-vxlan>default</bypass-vxlan>
-              <etree-enable>false</etree-enable>
-              <control-word>false</control-word>
               <rts>
                 <rt nc:operation="create">
                   <vrf-rt-type>export-extcommunity</vrf-rt-type>
@@ -138,12 +112,7 @@
             <admin-status>up</admin-status>
             <link-protocol>ethernet</link-protocol>
             <router-type>broadcast</router-type>
-            <clear-ip-df>false</clear-ip-df>
-            <link-up-down-trap-enable>true</link-up-down-trap-enable>
             <statistic-enable>false</statistic-enable>
-            <statistic-mode>interface-based</statistic-mode>
-            <spread-mtu-flag>false</spread-mtu-flag>
-            <vrf-name>_public_</vrf-name>
             <l2-mode-enable>true</l2-mode-enable>
             <ethernet xmlns="urn:huawei:yang:huawei-ethernet">
               <l2-sub-interface nc:operation="create">
@@ -153,6 +122,9 @@
                     <vlan-list>{{ SPLICING_VID }}</vlan-list>
                   </vlans>
                 </dot1q>
+                <flow-action nc:operation="create">
+                  <action-type>pop-outer</action-type>
+                </flow-action>
               </l2-sub-interface>
             </ethernet>
             <multicast-bas xmlns="urn:huawei:yang:huawei-multicast-bas" nc:operation="create">
@@ -168,12 +140,7 @@
             <admin-status>up</admin-status>
             <link-protocol>ethernet</link-protocol>
             <router-type>broadcast</router-type>
-            <clear-ip-df>false</clear-ip-df>
-            <link-up-down-trap-enable>true</link-up-down-trap-enable>
             <statistic-enable>false</statistic-enable>
-            <statistic-mode>interface-based</statistic-mode>
-            <spread-mtu-flag>false</spread-mtu-flag>
-            <vrf-name>_public_</vrf-name>
             <l2-mode-enable>true</l2-mode-enable>
             <ethernet xmlns="urn:huawei:yang:huawei-ethernet">
               <l2-sub-interface nc:operation="create">
@@ -183,6 +150,9 @@
                     <vlan-list>{{ SPLICING_VID }}</vlan-list>
                   </vlans>
                 </dot1q>
+                <flow-action nc:operation="create">
+                  <action-type>pop-outer</action-type>
+                </flow-action>
               </l2-sub-interface>
             </ethernet>
             <multicast-bas xmlns="urn:huawei:yang:huawei-multicast-bas" nc:operation="create">
@@ -205,6 +175,18 @@
           </vni-instance>
         </vni-instances>
       </nvo3>
+      <virtual-system-if xmlns="urn:huawei:yang:huawei-virtual-system-if">
+        <if-bind-vses>
+          <if-bind-vs nc:operation="merge">
+            <if-name>{{ PRESET_WAN_VPN_BD_INTERFACE }}.{{ WAN_VPN_BD }}</if-name>
+            <vs-name>Admin-VS</vs-name>
+          </if-bind-vs>
+          <if-bind-vs nc:operation="merge">
+            <if-name>{{ PRESET_ACCESS_VPN_BD_INTERFACE }}.{{ ACCESS_VPN_BD }}</if-name>
+            <vs-name>Admin-VS</vs-name>
+          </if-bind-vs>
+        </if-bind-vses>
+      </virtual-system-if>
     </config>
   </edit-config>
 </rpc>
